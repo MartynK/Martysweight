@@ -2,7 +2,7 @@ library(readr)
 library(ggplot2)
 library(splines)
 
-feed <- read_delim("B:/R stuff/Copy of feeding.csv", 
+feed <- read_delim("Copy of feeding.csv", 
                               ";", escape_double = FALSE, trim_ws = TRUE,locale=locale(decimal_mark = ","))
 # View(Copy_of_feeding)
 
