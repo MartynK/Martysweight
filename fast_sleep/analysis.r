@@ -5,11 +5,11 @@ library(ggplot2)
 library(splines)
 
 
-fast_sleep      <- read_delim("~/V2 Docs/Bistat képzés/Misc/fasting/fast_sleep_data.txt", 
+fast_sleep      <- read_delim("fast_sleep_data.txt", 
                               "\t", escape_double = FALSE, locale = locale(decimal_mark = ","), 
                               trim_ws = TRUE)
 
-fs <- read_delim("~/V2 Docs/Bistat képzés/Misc/fasting/fast_sleep_data.txt", 
+fs <- read_delim("fast_sleep_data.txt",
                   "\t", escape_double = FALSE, locale = locale(), 
                   trim_ws = TRUE)
 
