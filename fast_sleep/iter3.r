@@ -50,10 +50,10 @@ fast_sleep$Episode <- as.factor( fast_sleep$Episode)
 ### Splineokkal, nem change-re
 
 Spline_BIC <- expand.grid( 
-                   time = 1:4,
-                   twu  = 0:4,
-                   lfw  = 0:4,
-                   dat  = 1:12,
+                   time = 1:5,
+                   twu  = 0:0,
+                   lfw  = 0:0,
+                   dat  = 1:15,
                    interact = c(F),
                    BIC  = 0,
                    AIC  = 0,
@@ -93,10 +93,11 @@ for ( i in 1:nrow(Spline_BIC)) {
   .b <- -1000
   .a <- -1000
   try( silent = TRUE, expr = {
-    m <- lme( f, 
-              random = ~1|Episode, 
+    m <- gls( f, 
+              #random = ~1|Episode, 
               data = fast_sleep,
-              weight = varExp()
+              weight = varExp(),
+              corAR1( form = ~ time|Episode)
               #corARMA(p=2,q=2,form=~time)
               #corAR1( form = ~ time)
                       )
@@ -121,7 +122,7 @@ ggplot( Spline_BIC, aes( x = time, y = BIC, group = twu, color = as.factor(twu))
                #correlation = corARMA(p=2,q=2,form=~time), 
                #corExp( form = ~time),  
                #corCompSymm(form = ~ time), 
-               #corAR1( form = ~ time ),
+               corAR1( form = ~ time|Episode), #!!
                weights = varExp(),
                data = fast_sleep)
   
@@ -147,50 +148,105 @@ sp  %>%
   geom_point( aes( y = AICr)) +
   geom_hline(yintercept = 1, color = "salmon")
 
-#plot(fast_sleep$date,fast_sleep$time)
-#plot(Spline_BIC[,3],Spline_BIC$BIC)
 
-#####
+mod <- lme( Mass ~ time + Last_fed_weight + ns(date, 5), 
+            random = ~1|Episode,
+            #correlation = corARMA(p=2,q=2,form=~time), 
+            #corExp( form = ~time),  
+            #corCompSymm(form = ~ time), 
+            corAR1( form = ~ time|Episode),
+            weights = varExp(),
+            data = fast_sleep)
 
-
-
-mod2a <- gam(Mass ~ s(time, bs = "ts") + s(date, bs = "ts") + s(Last_fed_weight, bs = "ts") + s(twu, bs = "ts"), data = fast_sleep)
-mod2a
-viz <- getViz(mod2a)
-
-p <- plot(viz, allTerms = T) +
-  theme_bw() +
-  l_points() +
-  l_fitLine() +
-  l_ciLine(colour = 2)
-
-print(p, pages = 1)
-
-qq(viz, rep = 50, showReps = T, CI = "none", 
-   a.qqpoi = list("shape" = 19), 
-   a.replin = list("alpha" = 0.1)) +
-  title("QQplot of the deviance residuals based on the GAM")
-
-# refitting without twu
-mod2 <- gam(Mass ~ s(time, bs = "ts") + s(date, bs = "ts") + s(Last_fed_weight, bs = "ts"), data = fast_sleep)
-mod2
-summary(mod2)
-plot(mod2)
-#
-gam.check(mod2)
-
-
-plot(predict(mod2), predict(mod2a))
-plot(predict(mod), predict(mod2))
-abline(a=0,b=1)
-anova(mod2)
-anova(mod2,mod2a)
+plot(mod)
+plot(predictorEffects(mod, residuals=TRUE))
+plot(ranef(mod))
+anova(mod)
+BIC(mod)
+AIC(mod)
 
 
 
-library(visreg)
-visreg2d(mod2, xvar= 'time', yvar='date', scale='linear')
-visreg2d(mod2, xvar= 'time', yvar='Last_fed_weight', scale='linear')
-visreg2d(mod2, xvar= 'Last_fed_weight', yvar='date', scale='linear')
+mod <- gls( Mass ~ time + Last_fed_weight + ns(date, 7), 
+            #random = ~1|Episode,
+            #correlation = corARMA(p=2,q=2), 
+            #corExp( ),  
+            #corCompSymm(form = ~ time), 
+            corAR1(form = ~ time|Episode),
+            weights = varExp(),
+            data = fast_sleep
+            # control = glsControl(msMaxIter = 200, 
+            #                      maxIter = 200, 
+            #                      opt = "optim",
+            #                      #optimMethod = "L-BFGS-B",
+            #                      tolerance = 1e-9
+            #                      #msVerbose=T
+            #                      )
+            )
 
+
+plot(mod)
+plot(predictorEffects(mod, residuals=TRUE))
+anova(mod)
+BIC(mod)
+AIC(mod)
+
+
+mod <- gls( Mass ~ time *  ns(date, 7) + Last_fed_weight , 
+            #random = ~1|Episode,
+            #correlation = corARMA(p=2,q=2), 
+            #corExp( ),  
+            #corCompSymm(form = ~ time), 
+            corAR1(form = ~ time|Episode),
+            weights = varExp(),
+            data = fast_sleep)
+
+summary(mod)
+plot(mod)
+plot(predictorEffects(mod, residuals=TRUE))
+anova(mod)
+BIC(mod)
+AIC(mod)
+
+mod <- gls( Mass ~ ns(time,2) +  ns(date, 8) , 
+            #random = ~1|Episode,
+            #correlation = corARMA(p=2,q=2), 
+            #corExp( ),  
+            #corCompSymm(form = ~ time), 
+            corAR1(form = ~ time|Episode),
+            weights = varExp(),
+            data = fast_sleep)
+
+summary(mod)
+plot(mod)
+plot(predictorEffects(mod, residuals=TRUE))
+anova(mod)
+BIC(mod)
+AIC(mod)
+
+
+fs <- fast_sleep
+fs$pred <- predict(mod)
+
+ggplot(fs[fs$time==0,],aes(x=Mass,y=pred)) +
+  geom_point() +
+  geom_abline(slope=1,intercept = 0)
+
+
+newdata <- expand.grid( time = seq(0,30,length.out = 8),
+                       date = seq(0,30,length.out = 100))
+
+newdata$pred <- predict(mod, newdata = newdata)
+
+ggplot(newdata, aes(x = date, y = pred, group= time, color = time)) +
+  geom_line() +
+  scale_color_gradient( low="black",high="gray70")
+
+library(emmeans)
+pred <- summary(emmeans(mod,specs=c("date","time"),cov.reduce=FALSE,
+                        at = list(date = seq(0,31,.3))))
+
+ggplot( pred[pred$time == 0,], aes(x = date, y = lower.CL, group = time)) +
+  geom_line() +
+  geom_line(aes(y=upper.CL))
 

@@ -1,0 +1,280 @@
+---
+title: "Untitled"
+description: |
+  A new article created using the Distill format.
+author:
+  - name: Marton Kiss
+    url: https://github.com/MartynK
+    affiliation: -
+date: "`r Sys.Date()`"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Loading the data
+
+```{r}
+
+library(readr)
+library(effects)
+library(nlme)
+library(ggplot2)
+library(splines)
+library(kableExtra)
+library(dplyr)
+library(directlabels)
+library(mgcv)
+library(mgcViz)
+
+
+
+fast_sleep      <- read_delim("fast_sleep_data.txt", 
+                              "\t", 
+                              escape_double = FALSE, 
+                              locale = locale(date_format   = "%Y.%m.%d",                                                                  decimal_mark  = ",", 
+                                              grouping_mark = ""), 
+                              trim_ws = TRUE)
+
+fast_sleep$time <- as.numeric(
+                     fast_sleep$Day_offset * 24 * 3600 + 
+                     fast_sleep$Time_of_measurement - 
+                     fast_sleep$Finished_eating
+                   ) / 3600
+
+fast_sleep$twu     <- as.numeric(fast_sleep$Time_of_measurement - fast_sleep$Woke_up) / 3600
+fast_sleep$twu     <- ifelse( fast_sleep$twu > fast_sleep$time, fast_sleep$time, fast_sleep$twu)
+fast_sleep         <- fast_sleep[is.na(fast_sleep$Mass)==FALSE,]
+fast_sleep$change  <- fast_sleep$Mass - fast_sleep$Last_fed_weight
+fast_sleep$date    <- as.numeric( difftime( fast_sleep$Date_beginning + fast_sleep$Day_offset, fast_sleep$Date_beginning[1])/ (24*3600))
+fast_sleep$Episode <- as.factor( fast_sleep$Episode)
+
+
+```
+Visualizing with "pairs" looking for patterns
+
+```{r}
+
+fsn <- fast_sleep[ , unlist(lapply(fast_sleep, is.numeric)) == TRUE]
+fsn <- fsn[ , -4]
+colnames(fsn) <- c("Last fed weight (kg)",
+                   "Calendar days \nsince last meal",
+                   "Mass (kg)",
+                   "Time since \nlast meal (hours)",
+                   "Time since \nwaking up (hours)",
+                   "Change in \nbody mass (kg)",
+                   "Date (days since \n2020.11.02)")
+
+pairs( fsn)
+
+```
+
+Making a correlaton matrix.
+
+```{r}
+cor( fsn) %>%
+  kbl( digits = 2) %>%
+  kable_minimal()
+
+```
+
+Plotting the main interest
+
+```{r}
+
+ggplot(fast_sleep, aes( x = time, y = Mass, group = Episode, color = Date_beginning)) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  geom_line(size = .5, linetype = "twodash") +
+  geom_point( shape = 15, size = 1.8) +
+  scale_color_gradient( low="gray70",high="black") +
+  xlab( "Time since last meal (hours)") +
+  ylab( "Body mass (kg)") +
+  labs(caption = "Collected measurements over time; lighter shades of grey indicates earlier collection dates. 
+Measurements collected in the same period of fasting are connected with dashed lines.")
+
+
+```
+
+
+Plotting the sparsity of the observations
+
+```{r}
+
+ggplot(fast_sleep, aes( x = Date_beginning, y = time, group = Episode)) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  geom_line(size = .5, linetype = "twodash") +
+  geom_point( shape = 15, size = 1.8) +
+  xlab( "Date of first measurement (2020)") +
+  ylab( "Time since last meal (hours)")
+  #geom_hline(yintercept=24, color = "salmon4")
+  #labs(caption = "Distribution of measurements in the data collection period.")
+
+```
+### (Initial) investigations with GAM
+
+Beginning with a gam() model.
+
+
+```{r}
+
+# fsnn <- fast_sleep # as in "fast_sleep_nice_names"
+
+# colnames(fsnn) <- c("Date of first measurement (2020)",
+#                     "No. of measured fasting episode",
+#                     "Time of waking up",
+#                     "Time of the end of last meal",
+#                    "Last fed weight (kg)",
+#                    "Calendar days since last meal",
+#                    "Mass (kg)",
+#                    "Blood glucose (mmol/ml)",
+#                    "Time since last meal (hours)",
+#                    "Time since waking up (hours)",
+#                    "Change in body mass (kg)",
+#                    "Date (days since 2020.11.02)")
+# 
+# mod_gam <- gam(Mass ~ s("Time since last meal (hours)", bs = "ts") + 
+#                       s("Date (days since 2020.11.02)", bs = "ts") + 
+#                       s("Last fed weight (kg)", bs = "ts") + 
+#                       s("Time since waking up (hours)", bs = "ts"), 
+#                data = fsnn)
+
+mod_gam <- gam(Mass ~ s(time, bs = "ts") + 
+                      s(date, bs = "ts") + 
+                      s(Last_fed_weight, bs = "ts") + 
+                      s(twu, bs = "ts"), 
+               data = fast_sleep)
+
+mod_gam
+
+viz <- getViz(mod_gam)
+anova(mod_gam)
+
+
+p <- plot(viz, allTerms = F, select = 4) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  l_points(shape = 19, size = .5, alpha = 1) +
+  l_fitLine( size = 1.3) +
+  l_ciLine(colour = 2) +
+  xlab("Time since waking up (hours)") +
+  ylab("Predicted smoothed term") +
+  labs( caption = "Plot representing the importance of 'time since wakeup'.
+Points represent the partial residuals, approximate 95% CI is noted with dashed lines.")
+  
+
+print(p, pages = 1)
+
+
+```
+Based on the (approximate) ANOVA table, small absolute contribution of the term to the dependant variable, it may be omitted.
+
+```{r}
+
+mod_gam <- gam(Mass ~ s(time, bs = "ts") + 
+                      s(date, bs = "ts") + 
+                      s(Last_fed_weight, bs = "ts"), 
+               data = fast_sleep)
+
+mod_gam
+anova(mod_gam)
+
+```
+
+
+```{r gamqqplot}
+
+viz <- getViz(mod_gam)
+
+
+qq(viz, rep = 50, showReps = T, CI = "none", 
+   a.qqpoi = list("shape" = 19), 
+   a.replin = list("alpha" = 0.1)) 
+
+
+```
+
+```{r}
+
+par(mfcol=c(2,2))
+gam.check(mod_gam)
+par(mfcol=c(1,1))
+
+```
+
+```{r gam_fasttime_plot, fig.cap="Change in body weight as a function of hours fasted"}
+
+p <- plot(viz, allTerms = F, select = 1) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  l_points(shape = 19, size = .5, alpha = 1) +
+  l_fitLine( size = 1.3) +
+  l_ciLine(colour = 2) +
+  xlab("Time since last meal (hours)") +
+  ylab("Predicted smoothed term") +
+  labs( caption = "Plot representing the smoothed term. Points represent the partial residuals, approximate 95% CI is noted with dashed lines.")
+
+
+print(p, pages = 1)
+
+```
+
+```{r gam_calendar_plot, fig.cap="Change in body weight at different days"}
+
+p <- plot(viz, allTerms = F, select = 2) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  l_points(shape = 19, size = .5, alpha = 1) +
+  l_fitLine( size = 1.3) +
+  l_ciLine(colour = 2) +
+  xlab("Days since 2020.11.02") +
+  ylab("Predicted smoothed term") +
+  labs( caption = "Plot representing the smoothed term. Points represent the partial residuals, approximate 95% CI is noted with dashed lines.")
+
+
+print(p, pages = 1)
+
+```
+
+```{r gam_baseline_plot, fig.cap="Effect of baseline body weight (at the beginning of a fast)"}
+
+p <- plot(viz, allTerms = F, select = 3) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  l_points(shape = 19, size = .5, alpha = 1) +
+  l_fitLine( size = 1.3) +
+  l_ciLine(colour = 2) +
+  xlab("Basline body mass (after meal)") +
+  ylab("Predicted smoothed term") +
+  labs( caption = "Plot representing the smoothed term. Points represent the partial residuals, approximate 95% CI is noted with dashed lines.")
+
+
+print(p, pages = 1)
+
+```
+
+### 
+
+
+```{r}
+
+hist(predict(mod_gam, se.fit=T)$se.fit)
+
+
+
+```

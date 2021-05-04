@@ -1,0 +1,341 @@
+---
+title: "Calibration of my bathroom scale"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.align = 'center')
+```
+
+## Introduction
+
+I have become fed up with my *lying* "smart" bathroom scale! I am deeply convinced that it gives false(ly high) results. I am feeling especially sceptic if I for exampe take off a heavy sweater (as an unoffending example) and measure myself again, and get the same results! Of course it says that the "accuracy" of the scale is .1 kg but that is blatantly not the case. Clealy, something has to be done.
+
+## Experimental design
+
+I have created an ad-hoc experiment by weighing myself a couple of times. I would consume a set amount of water between measurements (~.1 kg, which I weighed with my kitchen scale; this also may not be perfect, but one step at a time). 
+About 1 kg of water drinking later I have also weighed myself with some small weights (& paint cans). 
+
+I had a(n occupied) baby carrier on me up to this point and the baby had to be removed (woke up) about the same time as I was done weighing myself with the paint cans (and was also dutifully weighed also along with myself without the baby).
+
+My spouse was aso kind enough to be weighed with and without some small weights.
+
+Finally the small weights were weighed together in a large pot. 
+
+Based on the measurements described above, I have obtained results all over the range of what the scale could measure. I would usually repeat each measurement 4 times (I got careless and once measured 3 and at another time 5 times).
+
+```{r}
+library(dplyr)
+
+cal <- readxl::read_xlsx("scales_calib.xlsx")
+cal$Situation <- as.factor( cal$Situation)
+cal$Offset <- cal$Offset/1000
+
+cal$rep <- ""
+cal$repno <- 0
+
+nrep <- cal %>%
+  group_by(Offset,Situation) %>% 
+  slice(1)
+
+
+for (i in 1:nrow(nrep)){
+  cal$rep[cal$Situation == nrep$Situation[i] &
+            cal$Offset == nrep$Offset[i]] <- i
+  cal$repno[cal$Situation == nrep$Situation[i] &
+              cal$Offset == nrep$Offset[i]] <- 1:nrow(  cal[cal$Situation == nrep$Situation[i] &
+                                  cal$Offset == nrep$Offset[i],])
+}
+cal$rep <- as.factor(cal$rep)
+
+```
+
+## Results
+
+A total of 85 measurements were recorded. The repeat of the measures doesn't seem to provide any additional information; in only one case was one of the measurements different from the other four. (This might be important, signalling that here is probably no devilish algorithm included which suppresses different results from weighing approximately the same weight repeatedly.)
+
+
+```{r}
+library(ggplot2)
+
+
+ggplot(cal, aes(x = Offset, y = Measurement)) +
+  theme_bw() +
+  geom_point(aes(color = Situation)) +
+  facet_wrap(facets = "Situation") +
+  geom_smooth(formula = y ~ x, method="lm", color = "grey50", size=.1, linetype = "dashed")
+
+
+```
+
+## 
+
+As a first step, we fit a linear model with the different 'Situation' (whether it was me, my wife or a pan was on the scale) as a factor, the 'Offset' (how much ballast was involved - I had my baby strapped to my chest for most measurements but I had taken her off for the final measurements making it possible to have a negative 'ballast'; for the pan + ballast setup I chosen '0' as the weight of the 'situation' and considered everything, even the pan as ballast - all of which I was able to measure with my second scale). The 'number of measurement' was also included but it is quickly revealed (as suspected) that it doesn't contribute to anything.
+
+```{r}
+
+
+mod_ols <- lm( Measurement ~ Offset + Situation + repno, cal)
+
+anova(mod_ols)
+
+```
+
+Because the repeat measures gave the same results this would perhaps in some sense lead to pseudoreplication (I've actually conducted the measurements, but I'm being conservative here; if anything, you don't have to explain the massive autocorrelation in the resisuals this way), so I'd use the first measurement from each repeat from now on.
+
+```{r}
+acf(residuals(mod_ols))
+```
+```{r}
+cal_red <- cal[cal$repno ==1,]
+
+mod_ols_red <- lm( Measurement ~ Offset + Situation, cal_red)
+
+acf(residuals(mod_ols_red))
+
+```
+Much better (the scale would register an increase in approx. 2 levels of actual increase in mass, that's why the acf() signals something for lag = 2). I consider this an improvement even when considering that I have `r nrow(cal_red)` observations left.
+
+On to the next big problem, heteroscedasticity. When measuring bigger things, the uncertainty of the measurement is bigger; this is a common feature when trying to calibrate stuff.
+
+```{r}
+
+plot(mod_ols_red,1)
+
+```
+
+I'll address this by using WLS - weighed least squares. I'll assume that the uncertainty is a function of the measurement^2.
+...which doesn't change much according to the residuals plots.
+
+
+```{r}
+
+cal_red$wts <- 1/fitted(lm(abs(residuals(mod_ols_red)) ~ cal_red$Measurement))^2
+
+# #Plot for back-transforming
+# ggplot(cal, aes(x=Measurement)) +
+#   geom_point(aes(y= sqrt(1/wts))) +
+#   geom_smooth(aes(y = sqrt(1/wts)))
+
+mod_wls <- lm( Measurement ~ Offset + Situation, cal_red, weights = wts)
+
+
+par( mfcol = c(1,2))
+plot(mod_ols_red,1)
+plot(mod_wls,1)
+par( mfcol = c(1,1))
+
+```
+
+Also, we've get to look at the normality of the reiduals which also looks acceptable.
+
+```{r}
+
+ggpubr::ggqqplot(residuals(mod_wls))
+
+```
+
+We can find the predictions for the three 'situations'. These are prediction intervals (aka. tolerance intervals), meaning that they do not represent the uncertainty of the *average* measurements but give a range of the possible *individual* measurements in each situation (without any ballasts). 
+
+```{r}
+
+paste("Prediction for my weight (with baby):")
+predict( mod_wls, newdata = data.frame( Situation = "M", Offset = 0), 
+         se.fit = TRUE, interval = "prediction", weights = cal$wts[1])$fit
+paste()
+
+paste("Prediction for my wife's weight:")
+predict( mod_wls, newdata = data.frame( Situation = "Zs", Offset = 0), 
+         se.fit = TRUE, interval = "prediction", weights = cal$wts[1])$fit
+paste()
+
+paste("Prediction for weighing the ballasts (should be 0):")
+predict( mod_wls, newdata = data.frame( Situation = "S", Offset = 0), 
+         se.fit = TRUE, interval = "prediction", weights = cal$wts[1])$fit
+```
+
+We can see that there is a ~.5 kg uncertainty. 
+To be a bit more elaborate, first we make an important **assumption** - we assume that each prediction is correct (as in we 'suddenly' assume that our weights are known exactly).
+Then we can plot the limits of the prediction intervals to see how they might contract/exand as the function of the 'real' weight measured.
+
+```{r}
+
+newd <- cal_red[0,-2]
+newd <- rbind( newd, expand.grid( Situation = c("M","Zs","S"),
+                                     Offset = seq( -22, 27, 
+                                                   length.out = 300),
+                                  rep = as.factor("1"),
+                                  repno = 1))
+
+pr_wght <- predict(mod_wls,newdata=data.frame(Situation=c("M","Zs","S"),
+                                                Offset = 0,
+                                              rep = as.factor("1"),
+                                              repno = 1))
+pr_wght[3] <- 0 # from its definition
+
+cal_red$realweight <- ifelse( cal_red$Situation == "M", pr_wght[1], 
+                            ifelse( cal_red$Situation == "Zs", pr_wght[2], 0)) +
+                  cal_red$Offset
+
+cal_red$res_wls <- cal_red$Measurement - predict( mod_wls, newdata = cal_red)
+
+newd$realweight <- pr_wght[as.numeric(newd$Situation)] + newd$Offset
+
+newd <- newd[newd$realweight>=0,]
+
+# They overlap slightly, fixing manually...
+newd <- newd[ !(newd$Offset < -20.770 & newd$Situation == "Zs"),]
+newd <- newd[ !(newd$Offset < -21.260 & newd$Situation == "M"),]
+newd <- newd[ !(newd$Offset > 21.830 & newd$Situation == "Zs"),]
+
+newd$pred_ols       <- predict( mod_ols,newdata = newd)
+newd$pred_ols_lowci <- predict( mod_ols,
+                                newdata = newd, 
+                                se.fit = TRUE, 
+                                interval = "prediction")$fit[,2]
+newd$pred_ols_higci <- predict( mod_ols,
+                                newdata = newd, 
+                                se.fit = TRUE, 
+                                interval = "prediction")$fit[,3]
+
+
+
+newd$pred_wls       <- predict( mod_wls,newdata = newd)
+
+wts_mod <- lm(sqrt(1/wts) ~ Measurement,cal_red)
+newd$pred_wls_wght  <- 1/predict( wts_mod, newdata = data.frame( Measurement = newd$pred_wls))^2
+
+newd$pred_wls_lowci <- predict( mod_wls,
+                                   newdata = newd, 
+                                   se.fit = TRUE, 
+                                   interval = "prediction",
+                                   weights = newd$pred_wls_wght)$fit[,2]
+
+newd$pred_wls_higci <- predict( mod_wls,
+                                 newdata = newd, 
+                                 se.fit = TRUE, 
+                                 interval = "prediction",
+                                 weights = newd$pred_wls_wght
+                                 )$fit[,3]
+
+
+ggplot( newd, aes( x = realweight)) +
+  theme_bw() +
+  geom_point(aes(x = realweight, y = res_wls), data = cal_red, alpha = .25) +
+  geom_line(aes(y=pred_wls - pred_wls), color = "salmon4") +
+  geom_line(aes(y=pred_wls_lowci - pred_wls), linetype = "dashed") +
+  geom_line(aes(y=pred_wls_higci - pred_wls), linetype = "dashed") +
+  xlim(0,110) +
+  xlab("Weight (kg)") +
+  ylab("Tolerance interval; difference from the 'real' weight (kg)")
+
+
+```
+
+The extra 'uncertainty' is due to the fact that with this parameterization the model also adds greater uncertainty for bigger ballasts when they are applied. This is not necessary in line with the assumption of bigger weight -> more uncertainty.
+
+Of note, the difference between the OLS and the WLS models is illustrated below (without intervals, for a narrow range):
+
+```{r}
+
+ 
+ggplot( newd, aes( x = realweight)) +
+  theme_bw() +
+  geom_point(aes(x = realweight, y = Measurement), data = cal_red, alpha = .25) +
+  geom_line(aes(y=pred_ols), color = "salmon", size = 1.1) +
+  geom_line(aes(y=pred_wls), size = 1.1) +
+  xlim(70,75) +
+  ylim(70,75)  +
+  xlab("Weight (kg)") +
+  ylab("Average weight reported (kg)") +
+  labs( cap = "Red: OLS model, black: WLS model")
+  
+
+
+
+
+```
+
+```{r}
+
+# set.seed(1234)
+# nsim <- 1000
+# cal_sim <- cal_red
+# 
+# m <- predict( mod_wls, newdata = data.frame( Situation = "M", Offset = 0), 
+#          se.fit = TRUE, interval = "prediction", weights = cal_red$wts[1])$fit[c(2,3)]
+# 
+# m_sd <- (m[2] - m[1]) / (2 * 1.96)
+#   
+# z <- predict( mod_wls, newdata = data.frame( Situation = "Zs", Offset = 0), 
+#          se.fit = TRUE, interval = "prediction", weights = cal_red$wts[1])$fit[c(2,3)]
+# 
+# z_sd <- (z[2] - z[1]) / (2 * 1.96)
+# 
+# m_mu <- rnorm(nsim, 0, m_sd)
+# z_mu <- rnorm(nsim, 0, z_sd)
+# 
+# newd_sim <- data.frame( Measurement = seq( 5,100, length.out = 200))
+# 
+# cf <- lm(sqrt(1/cal_sim$wts)~cal_sim$Measurement)$coefficients
+# 
+# newd_sim$wts <- cf[1] + cf[2] * newd_sim$Measurement
+# newd_sim$wts <- 1/newd_sim$wts^2
+# 
+# out_fit <- matrix(data=rep(0, 200*nsim), ncol = 200)
+# out_lwr <- matrix(data=rep(0, 200*nsim), ncol = 200)
+# out_upr <- matrix(data=rep(0, 200*nsim), ncol = 200)
+# 
+# 
+# 
+# for (i in 1:nsim) {
+#   
+#   cal_sim$realweight_sim <-  cal_sim$realweight + ifelse( 
+#                             cal_sim$Situation == "M", m_mu[i], 
+#                               ifelse( cal_sim$Situation == "Zs", z_mu[i], 0
+#                                       )) +
+#                    ifelse( cal_sim$Situation == "S", 0, cal_sim$Offset)
+#   
+#   mod <- lm( realweight_sim ~ Measurement, weights = cal_sim$wts, cal_sim)
+#   out_fit[i,] <- predict(mod, newdata = newd_sim, interval = "prediction", 
+#                      weights = newd_sim$wts)[,1] # fit
+#   out_lwr[i,] <- predict(mod, newdata = newd_sim, interval = "prediction", 
+#                      weights = newd_sim$wts)[,2]
+#   out_upr[i,] <- predict(mod, newdata = newd_sim, interval = "prediction", 
+#                      weights = newd_sim$wts)[,3]
+#   
+# }
+
+```
+
+```{r}
+
+# fit <- sapply(1:ncol(out_fit), FUN=function(x){quantile(out_fit[,x],c(.025,.5,.975))})
+# upr <- sapply(1:ncol(out_upr), FUN=function(x){quantile(out_upr[,x],c(.025,.5,.975))})
+# lwr <- sapply(1:ncol(out_lwr), FUN=function(x){quantile(out_lwr[,x],c(.025,.5,.975))})
+# 
+# newd_sim <- cbind( newd_sim, t(fit), t(upr), t(lwr) )
+# 
+# colnames( newd_sim)[3:11] <- c("fit_low","fit_med","fit_high","upr_low","upr_med","upr_high","lwr_low","lwr_med","lwr_high")
+```
+
+```{r}
+
+# ggplot( newd_sim, aes( x = Measurement, y = 0)) +
+#   geom_line() +
+#   geom_line( aes(y=Measurement -fit_med))
+
+```
+
+To acknowledge the fact that errors could be on both sides of the regression, one should use Major Axis (or Semi major axis) regression. However it doesn't make much of a difference.
+
+```{r}
+mod_MA <- lmodel2::lmodel2( Measurement ~ realweight, data = cal_red)
+
+(mod_MA)
+
+plot(mod_MA)
+
+```
+

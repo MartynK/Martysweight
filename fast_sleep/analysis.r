@@ -76,7 +76,9 @@ BIC(mod3)
 
 mod4 <- lme( change ~ time, # + Last_fed_weight, 
              random = ~1|Episode,
+             #random=list(gen = pdDiag(~ Episode)),
              data = fast_sleep)
+
 
 summary(mod4)
 plot(mod4)
