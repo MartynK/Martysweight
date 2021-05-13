@@ -1,9 +1,9 @@
 ---
 title: "Untitled"
 description: |
-  A new article created using the Distill format.
+  "A new article created using the Distill format."
 author:
-  - name: Marton Kiss
+    name: Marton Kiss
     url: https://github.com/MartynK
     affiliation: -
 date: "`r Sys.Date()`"
@@ -20,7 +20,7 @@ Loading the data
 
 library(readr)
 library(effects)
-library(nlme)
+library(lme4)
 library(ggplot2)
 library(splines)
 library(kableExtra)
@@ -50,6 +50,8 @@ fast_sleep         <- fast_sleep[is.na(fast_sleep$Mass)==FALSE,]
 fast_sleep$change  <- fast_sleep$Mass - fast_sleep$Last_fed_weight
 fast_sleep$date    <- as.numeric( difftime( fast_sleep$Date_beginning + fast_sleep$Day_offset, fast_sleep$Date_beginning[1])/ (24*3600))
 fast_sleep$Episode <- as.factor( fast_sleep$Episode)
+fast_sleep$truedate <- fast_sleep$date + lubridate::hour(fast_sleep$Time_of_measurement)/24
+
 
 
 ```
@@ -65,8 +67,8 @@ colnames(fsn) <- c("Last fed weight (kg)",
                    "Time since \nlast meal (hours)",
                    "Time since \nwaking up (hours)",
                    "Change in \nbody mass (kg)",
+                   "Date (days since \n2020.11.02)",
                    "Date (days since \n2020.11.02)")
-
 pairs( fsn)
 
 ```
@@ -147,7 +149,7 @@ Beginning with a gam() model.
 #                data = fsnn)
 
 mod_gam <- gam(Mass ~ s(time, bs = "ts") + 
-                      s(date, bs = "ts") + 
+                      s(truedate, bs = "ts") + 
                       s(Last_fed_weight, bs = "ts") + 
                       s(twu, bs = "ts"), 
                data = fast_sleep)
@@ -176,16 +178,15 @@ print(p, pages = 1)
 
 
 ```
-Based on the (approximate) ANOVA table, small absolute contribution of the term to the dependant variable, it may be omitted.
+Based on the (approximate) ANOVA table, small absolute contribution of the term to the dependent variable, it may be omitted.
 
 ```{r}
 
 mod_gam <- gam(Mass ~ s(time, bs = "ts") + 
-                      s(date, bs = "ts") + 
+                      s(truedate, bs = "ts") + 
                       s(Last_fed_weight, bs = "ts"), 
                data = fast_sleep)
 
-mod_gam
 anova(mod_gam)
 
 ```
@@ -268,7 +269,7 @@ print(p, pages = 1)
 
 ```
 
-### 
+You may note that the (CI of the fixed terms) have a lower variability than the calibration curve's tolerance interval (at around 85 kg, the SE of which is ~.13).
 
 
 ```{r}
@@ -276,5 +277,508 @@ print(p, pages = 1)
 hist(predict(mod_gam, se.fit=T)$se.fit)
 
 
+```
+
+### Change vs. not change
+
+A quick example that in cases of "baseline correction", modelling "change" or the variable itself leads to the same results.
+
+That the change in body mass would be a function of the date is peculiar to say the least...
+
+Note that the tolerance intervals are quite large. However we are interested in the variability of the *effect* (which is in this case represents the 'true' weight as far as we can measure it).
+
+We have hacked splines with roughly the same 'wriggliness' as in the GAM model for now.
+
+```{r}
+
+mod_mass <- lm( Mass ~Last_fed_weight +  ns( time, df = 2) + ns( truedate, df = 7), 
+                 fast_sleep)
+
+mod_ch   <- lm( change ~ Last_fed_weight + ns( time, df = 2) + ns( truedate, df = 7), fast_sleep)
+
+pred_mass <- predict(mod_mass, se.fit = TRUE, interval = 'prediction')
+pred_ch   <- predict(mod_ch, se.fit = TRUE, interval = 'prediction')
+
+plot(pred_mass$fit[,1] - fast_sleep$Last_fed_weight, pred_ch$fit[,1])
+plot(pred_mass$se.fit, pred_ch$se.fit) # avg. SE
+
+plot((pred_mass$fit[,3] - pred_mass$fit[,2])/(2*1.96), 
+     (pred_ch$fit[,3] - pred_ch$fit[,2])/(2*1.96)) # predict.intervals
+
+
 
 ```
+
+## Mixed modelling
+
+Let's see what we can do with mixed models! I'll try to select a random intercept/slope model (without correlation between the terms). Models with high multicollinearity (VIF>10) should be shunned. Model selection is done via AIC and BIC values.
+
+```{r}
+
+
+Spline_BIC <- expand.grid( 
+                   time = 0:3,
+                   twu  = 0:0,
+                   lfw  = 0:3,
+                   dat  = 0:10,
+                   interact = c(F),
+                   BIC  = 0,
+                   AIC  = 0,
+                   VIF  = 0,
+                   f = "")
+Spline_BIC$f <- as.character(Spline_BIC$f)
+pb   <- txtProgressBar()
+
+for ( i in 1:nrow(Spline_BIC)) {
+  
+  ##### 
+  ###Generáljuk a "formulát"
+  f1 <- ifelse( Spline_BIC$time[i] == 0,
+                paste( "Mass ~ "),
+                paste( "Mass ~ ns(time,", 
+                       Spline_BIC$time[i],
+                      ")"))
+  f2 <- ifelse( Spline_BIC$interact[i] == TRUE, "*", "+")
+  
+  f3 <- ifelse( Spline_BIC$dat[i] == 0, "",
+                paste( " ns(truedate,", 
+                       Spline_BIC$dat[i],")"))
+
+  f4 <- ifelse( Spline_BIC$lfw[i] == 0, "",
+                paste( " + ns(Last_fed_weight,", 
+                       Spline_BIC$lfw[i],")"))
+  
+  f5 <- ifelse( Spline_BIC$twu[i] == 0, "",
+                paste( " + ns(twu,", 
+                       Spline_BIC$twu[i],")"))
+  
+
+  f <- paste(f1,f2,f3,f4,f5, "+(time||Episode)")
+  Spline_BIC$f[i] <- f
+  f       <- as.formula(f)
+  #####
+  
+  .b <- -1000
+  .a <- -1000
+  try( silent = TRUE, expr = {
+    m <- lmer( f, 
+              data = fast_sleep)
+    .b <- BIC(m)
+    .a <- AIC(m)
+    .v <- max(car::vif(m))
+  })
+  
+  Spline_BIC$BIC[i] <- .b
+  Spline_BIC$AIC[i] <- .a
+  Spline_BIC$VIF[i] <- .v
+  setTxtProgressBar(pb, i/nrow(Spline_BIC))
+  
+}
+close(pb)
+Spline_BIC <- Spline_BIC[Spline_BIC$BIC != -1000,]
+
+Spline_BIC %>%
+  .[Spline_BIC$VIF < 10,] %>%
+    ggplot( ., aes( x = dat, y = BIC, group = interact, color = as.factor(lfw))) +
+      def_th +
+  theme(legend.position = 'top') +
+      geom_point(size=2) +
+      facet_wrap(facets="time", labeller = label_both) +
+      scale_x_continuous(breaks=c(0,3,5,7,9)) +
+      xlab("df. of the spline modelling the effect of date") +
+  labs(caption="Facets represent the df. of the spline modelling the effect of hours fasted.
+Points in different color represent mdels in which the last fed weight is included with splines.
+Only models where the VIF of the most suspect term was < 10 are presented.")
+
+Spline_BIC %>%
+  .[Spline_BIC$VIF < 10,] %>%
+    ggplot( ., aes( x = dat, y = AIC, group = interact, color = as.factor(lfw))) +
+      def_th +
+      theme(legend.position = 'top') +
+      geom_point(size=2) +
+      facet_wrap(facets="time", labeller = label_both) +
+      scale_x_continuous(breaks=c(0,3,5,7,9)) +
+      xlab("df. of the spline modelling the effect of date") +
+  labs(caption="Facets represent the df. of the spline modelling the effect of hours fasted.
+Points in different color represent mdels in which the last fed weight is included with splines.
+Only models where the VIF of the most suspect term was < 10 are presented.")
+
+```
+
+Based on both AIC and BIC values, the date of the fasting period should be omitted (this is logical, but it is in contrast with the GAM suggestion), and the duration of the fast should be included with a spine (df=2).
+
+
+It seems that the model diagnostics are acceptable. There is some minor autocorrelation, which I think is due to the fact that each episode is ~4 observations long. There is perhaps a correlation between the intercept/slope of the random effects.
+
+The variance of the random effects is >0 indicating that their inclusion is warranted.
+
+```{r}
+
+
+mod_lmer   <- lmer( Mass ~ Last_fed_weight + ns( time, df = 2) #+ ns( truedate, df = 6)
+                   + (time||Episode), 
+                  fast_sleep)
+plot(mod_lmer)
+
+ggpubr::ggqqplot(residuals(mod_lmer))
+
+plot(ranef(mod_lmer))
+
+acf(residuals(mod_lmer))
+
+car::vif(mod_lmer)
+
+confint(mod_lmer, method = 'boot', nsim = 1000, boot.type = 'norm', oldNames = FALSE)
+
+plot(predictorEffects(mod_lmer, residuals = TRUE))
+
+```
+
+The correlation of the slopes and intercepts don't bring any marked improvements. The residuals are less optimal when a correlated model is introduced.
+
+```{r}
+
+mod_cor   <- lmer( Mass ~ Last_fed_weight + ns( time, df = 2) #+ ns( truedate, df = 6)
+                   + ( time|Episode),
+                  fast_sleep)
+
+anova( mod_lmer, mod_cor)
+
+plot(mod_cor)
+
+ggpubr::ggqqplot(residuals(mod_cor))
+
+plot(ranef(mod_cor))
+
+acf(residuals(mod_cor))
+
+car::vif(mod_cor)
+
+confint(mod_cor, method = 'boot', nsim = 1000, boot.type = 'norm', oldNames = FALSE)
+
+plot(predictorEffects(mod_cor, residuals = TRUE))
+```
+
+Showing the effect plots and the random effects.
+
+
+```{r}
+library(merTools)
+set.seed(1234)
+
+fast_sleep_cor <- fast_sleep
+fast_sleep_cor$pred <- predict( mod_lmer)
+
+
+predFun <- function(fit) {
+  predict(fit,allow.new.levels=FALSE)
+}
+
+bb <- bootMer(mod_lmer, nsim=300, FUN=predFun, seed=2718, 
+              use.u=TRUE, # Conditional on observed random effects!
+              type="parametric")
+
+fast_sleep_cor <- t( sapply(1:nrow(fast_sleep),
+                            function(x)quantile(bb$t[,x],
+                                                c(.025,.5,.975)))) %>%
+                    cbind(fast_sleep_cor, .)
+
+colnames( fast_sleep_cor)[(ncol(fast_sleep_cor)-2):
+                            (ncol(fast_sleep_cor))] <- c("bootlwr",
+                                                         "bootmed",
+                                                         "bootupr")
+
+fast_sleep_cor$se <- with( fast_sleep_cor, (bootupr-bootlwr)/(2*1.96))
+
+hist(fast_sleep_cor$se)
+
+with( fast_sleep_cor, plot(pred,bootmed))
+
+ggplot( fast_sleep_cor, aes( x = time, 
+                             y = bootmed - Last_fed_weight, 
+                             group = Episode, 
+                             color = Date_beginning)) +
+  theme_bw() +
+  geom_line()
+  
+ggplot( fast_sleep_cor, aes( x = time, 
+                             y = bootmed, 
+                             group = Episode, 
+                             color = Date_beginning)) +
+  theme_bw() +
+  geom_line()
+
+ggplot( fast_sleep_cor, aes( x = truedate, 
+                             y = bootmed, 
+                             group = Episode#, 
+                             #color = time
+                             )) +
+  theme_bw() +
+  geom_line() +
+  geom_line(aes(y=bootlwr), color="salmon4",linetype="dashed") +
+  geom_line(aes(y=bootupr), color="salmon4",linetype="dashed")
+  
+
+plotREsim(REsim(mod_lmer, n.sims=2000))  # plot the interval estimates
+
+# pr <- fast_sleep_cor[!duplicated(fast_sleep_cor$Episode),]
+# pr$time <- 8
+# pr$pr8 <- predict(mod_cor, newdata = pr)
+# plot(pr$Date_beginning,pr$pr8, type = "l") # random hatásokkal
+# plot(smooth.spline(pr$Date_beginning,pr$pr8))
+
+
+```
+
+# Modelling without 'baseline correction'
+
+What if you don't want to keep track of your weight when fully fed? Let's fit a model without the baseline term, chosen based on AIC/BIC.
+
+```{r}
+
+
+Spline_BIC <- expand.grid( 
+                   time = 1:3,
+                   twu  = 0:0,
+                   lfw  = 0:0,
+                   dat  = 0:10,
+                   interact = c(F),
+                   BIC  = 0,
+                   AIC  = 0,
+                   VIF  = 0,
+                   f = "")
+Spline_BIC$f <- as.character(Spline_BIC$f)
+pb   <- txtProgressBar()
+
+for ( i in 1:nrow(Spline_BIC)) {
+  
+  ##### 
+  ###Generáljuk a "formulát"
+  f1 <- ifelse( Spline_BIC$time[i] == 0,
+                paste( "Mass ~ "),
+                paste( "Mass ~ ns(time,", 
+                       Spline_BIC$time[i],
+                      ")"))
+  f2 <- ifelse( Spline_BIC$interact[i] == TRUE, "*", "+")
+  
+  f3 <- ifelse( Spline_BIC$dat[i] == 0, "",
+                paste( " ns(date,", 
+                       Spline_BIC$dat[i],")"))
+
+  f4 <- ifelse( Spline_BIC$lfw[i] == 0, "",
+                paste( " + ns(Last_fed_weight,", 
+                       Spline_BIC$lfw[i],")"))
+  
+  f5 <- ifelse( Spline_BIC$twu[i] == 0, "",
+                paste( " + ns(twu,", 
+                       Spline_BIC$twu[i],")"))
+  
+
+  f <- paste(f1,f2,f3,f4,f5,"+(time||Episode)")
+  Spline_BIC$f[i] <- f
+  f       <- as.formula(f)
+  #####
+  
+  .b <- -1000
+  .a <- -1000
+  try( silent = TRUE, expr = {
+    m <- lmer( f, 
+              #random = ~ time|Episode, 
+              data = fast_sleep #,
+              #weight = varPower()
+              #corAR1( form = ~ time|Episode)
+              #corARMA(p=2,q=2,form=~time)
+              #corAR1( form = ~ time)
+                      )
+    .b <- BIC(m)
+    .a <- AIC(m)
+    .v <- max(car::vif(m))
+  })
+  
+  Spline_BIC$BIC[i] <- .b
+  Spline_BIC$AIC[i] <- .a
+  Spline_BIC$VIF[i] <- .v
+  setTxtProgressBar(pb, i/nrow(Spline_BIC))
+  
+}
+close(pb)
+Spline_BIC <- Spline_BIC[Spline_BIC$BIC != -1000,]
+
+Spline_BIC %>%
+  .[Spline_BIC$VIF < 10,] %>%
+    ggplot( ., aes( x = dat, y = AIC, group = interact, color = as.factor(interact))) +
+      geom_point(size=2) +
+      facet_wrap(facets="time")
+
+Spline_BIC %>%
+  .[Spline_BIC$VIF < 10,] %>%
+    ggplot( ., aes( x = dat, y = BIC, group = interact, color = as.factor(interact))) +
+      geom_point(size=2) +
+      facet_wrap(facets="time")
+
+```
+
+
+
+
+
+````{r}
+
+mod_massmod   <- lmer( Mass ~ ns( time, df = 2) 
+                       + ns( truedate, df = 3)
+                       + (time||Episode),
+                       #random = ~time|Episode, 
+                       #weights = varPower(),
+                  fast_sleep)
+
+confint(mod_massmod, method = 'boot', nsim = 300, boot.type = 'norm', oldNames = FALSE)
+
+```
+````{r}
+
+mod_massmod_b   <- lmer( Mass ~ ns( time, df = 2) 
+                       + ns( truedate, df = 3)
+                       + (time|Episode),
+                       #random = ~time|Episode, 
+                       #weights = varPower(),
+                  fast_sleep)
+
+mod_massmod_c <- lmer( Mass ~ ns( time, df = 2) 
+                       + ns( truedate, df = 5)
+                       + (time|Episode),
+                       #random = ~time|Episode, 
+                       #weights = varPower(),
+                  fast_sleep)
+# Convergence problem!
+
+mod_massmod_c2 <- lmer( Mass ~ ns( time, df = 2) 
+                       + ns( truedate, df = 3)
+                       + (1|Episode),
+                       #random = ~time|Episode, 
+                       #weights = varPower(),
+                  fast_sleep)
+
+
+anova(mod_massmod,mod_massmod_b)
+anova(mod_massmod_b,mod_massmod_c,mod_massmod_c2)
+
+
+plot(mod_massmod_b)
+
+ggpubr::ggqqplot(residuals(mod_massmod_b))
+
+plot(ranef(mod_massmod_b))
+
+plot(predictorEffects(mod_massmod_b, residuals = TRUE))
+
+acf(residuals(mod_massmod_b))
+
+car::vif(mod_massmod_b)
+
+confint(mod_massmod_b, method = 'boot', nsim = 300, boot.type = 'norm', oldNames = FALSE)
+
+MuMIn::r.squaredGLMM(mod_massmod_b)
+
+#predict( mod_massmod, newdata = newdata, level = 0, se.fit = TRUE)
+
+
+```
+
+
+```{r}
+set.seed(1234)
+
+fast_sleep_massmod <- fast_sleep
+fast_sleep_massmod$pred <- predict( mod_massmod)
+
+fast_sleep_massmod <- predictInterval(mod_massmod_b,newdata = fast_sleep, 
+                                      which = 'fixed', level = .95, 
+                                      include.resid.var = FALSE,
+                                      n.sims = 2000) %>%
+  cbind(fast_sleep_massmod,.)
+# ONLY FOR THE FIXED TERM, use with caution!!
+
+
+fast_sleep_massmod$se <- with( fast_sleep_massmod, (upr-lwr)/(2*1.96))
+
+hist(fast_sleep_massmod$se)
+
+with( fast_sleep_massmod, plot(pred,fit))
+
+ggplot( fast_sleep_massmod, aes( x = time, 
+                             y = fit - Last_fed_weight, 
+                             group = Episode, 
+                             color = Date_beginning)) +
+  theme_bw() +
+  geom_line()
+  
+ggplot( fast_sleep_massmod, aes( x = time, 
+                             y = fit, 
+                             group = Episode, 
+                             color = Date_beginning)) +
+  theme_bw() +
+  geom_line()
+
+ggplot( fast_sleep_massmod, aes( x = truedate, 
+                             y = fit, 
+                             group = Episode#, 
+                             #color = time
+                             )) +
+  theme_bw() +
+  geom_line() +
+  geom_line(aes(y=lwr), color="salmon4",linetype="dashed") +
+  geom_line(aes(y=upr), color="salmon4",linetype="dashed")
+  
+
+plotREsim(REsim(mod_massmod_b, n.sims=2000))  # plot the interval estimates
+
+
+```
+
+
+
+
+```{r}
+
+newdata <- expand.grid( time = 8,
+                        truedate = seq(0,31, length.out = 1000),
+                        Episode = as.factor(1))
+
+
+newdata <- predictInterval(mod_massmod_b, newdata = newdata, 
+                                      which = 'fixed', level = .95, 
+                                      include.resid.var = FALSE,
+                                      n.sims = 2000) %>%
+  cbind(newdata,.)
+
+newdata$se <- with( newdata, (upr-lwr)/(2*1.96))
+
+ggplot( newdata, aes( x = truedate, 
+                             y = fit)) +
+  theme_bw() +
+  geom_line() +
+  geom_line(aes(y = fit + 1.96 * se),color= "salmon4") +
+  geom_line(aes(y = fit - 1.96 * se),color= "salmon4") +  
+  geom_point( aes(x = truedate, y = fit), 
+              data = newdata[newdata$se < .13,], 
+              color = "salmon4") +
+    geom_point( data = fast_sleep, aes(x = truedate, y = Mass), color = "grey50")
+
+
+plot(newdata$truedate,newdata$se)
+abline( a = .13, b = 0, col = 'red')
+abline( a = .1 , b = 0, col = 'pink')
+
+
+# md <- JWileymisc::modelDiagnostics(mod_massmod_b, ev.perc = .001)
+# 
+# plot(md, ask = FALSE, ncol = 
+#        23, nrow = 3)
+
+
+```
+
+
+
+
+

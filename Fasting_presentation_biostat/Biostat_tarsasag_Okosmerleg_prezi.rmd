@@ -1,0 +1,1154 @@
+---
+title: "Okosabb vagyok-e mint az okosmérleg?"
+subtitle: ""
+author: "Márton Kiss, MD (mrkmarton@gmail.com)"
+date: '2020 05 14'
+output: binb::metropolis
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, warning = FALSE)
+```
+
+## Miről lesz szó?
+ 
+\vspace{.1in}
+
+\small
+
+Nem vagyok meggyőződve a fürdőszobamérlegem pontosságáról, ezért némi (ön-) kísérletezésbe fogtam.  
+\vspace{.05in}
+A következőkben:  
+
+ * Kísérletet teszek a mérlegem  **\textcolor{blue}{kalibrálására}** családtagok segítségével  
+ 
+ \vspace{.1in}
+ 
+ * Bemutatok egy módszert, ami némi  **\textcolor{blue}{plusz információ}** segítségével pontosabb és esetleg hasznosabb eredményeket ad  
+ 
+ \vspace{.1in}
+ 
+ * Röviden megemlékezem a  **\textcolor{blue}{"self-tracking"}** jelenségéről és az általánosan alkalmazott eljárások korlátairól 
+
+
+
+## Kísérleti felállás - kalibráció
+
+\fontsize{9pt}{7.2}\selectfont
+
+Ismételt méréseket végeztem *\textcolor{red}{ismert}* tömegű víz fogyasztása után (több lépcsőben), majd szintén *ismert* tömegű súlyok (*\textcolor{blue}{Offset}* változó, 2 kg-os súlyzók, festékesbödönök, kisbaba) együttes mérésével.
+
+ \vspace{.1in}
+
+```{r, fig.asp=.4, message = FALSE}
+library(dplyr)
+library(ggplot2)
+
+def_th <- theme_bw() +
+        theme( legend.position = "none",
+               plot.caption = element_text( vjust = 0,
+                                            hjust = 0#,
+                                            #margin(t=15)
+                                            ),
+               text = element_text( family = "serif"))
+
+# def_th <- theme_bw() +
+#         theme( legend.position = "none",
+#                text = element_text( family = "serif"))
+
+cal <- readxl::read_xlsx("~/R/Projects/Fasting/fast_sleep/scales_calib.xlsx")
+cal$Situation <- as.factor( cal$Situation)
+cal$Offset <- cal$Offset/1000
+
+cal$rep <- ""
+cal$repno <- 0
+
+nrep <- cal %>%
+  group_by(Offset,Situation) %>% 
+  slice(1)
+
+
+for (i in 1:nrow(nrep)){
+  cal$rep[cal$Situation == nrep$Situation[i] &
+            cal$Offset == nrep$Offset[i]] <- i
+  cal$repno[cal$Situation == nrep$Situation[i] &
+              cal$Offset == nrep$Offset[i]] <- 1:nrow(  cal[cal$Situation == nrep$Situation[i] &
+                                  cal$Offset == nrep$Offset[i],])
+}
+cal$rep <- as.factor(cal$rep)
+
+ggplot(cal[cal$Situation == "M",], aes(x = Offset, y = Measurement)) +
+  def_th +
+  geom_point() +
+  geom_smooth(formula = y ~ x, method="lm", color = "grey50", size=.1, linetype = "dashed")
+
+
+
+```
+
+## Kísérleti felállás - kalibráció II.
+
+\fontsize{9pt}{7.2}\selectfont
+
+A feleségem segítségével még egy "szinten" történt mérés súlyzóval/súlyzó nélkül. Végül, a súlyokkal önmagában is készültek mérések (egy szintén ismert tömegű fazékot is felhasználva).
+
+ \vspace{.1in}
+
+```{r, fig.asp=.4, message = FALSE}
+
+ggplot(cal, aes(x = Offset, y = Measurement)) +
+  def_th +
+  geom_point(aes(color = Situation)) +
+  facet_wrap(facets = "Situation") +
+  geom_smooth(formula = y ~ x, method="lm", color = "grey50", size=.5, linetype = "dashed")
+
+```
+
+Feltűnik, hogy az ismétlések során az ismételt mérések összetartanak, csak egy esetben figyeltünk meg egy darab eltérő eredményt ismételt méréseknél! Éppen ezért az ismétléseket *\textcolor{red}{elhanyagoltam}* (21 db mérés marad). 
+
+## Kalibrálás WLS segítségével
+
+\fontsize{9pt}{7.2}\selectfont
+
+ \vspace{.1in}
+
+OLS alkalmazása esetén sértenénk a szóráshomogenitást (nagyobb súlyt nagyobb szórással mérnénk).  
+
+Ennek egy egyszerű megoldása a megfigyelések újrasúlyozása a szórás változását feltételezve (itt *variancia ~ tömeg*).  
+
+Ilyen módon illesztjük a következő modellt:  
+
+```{r}
+cal_red <- cal[cal$repno ==1,]
+
+mod_ols_red <- lm( Measurement ~ Offset + Situation, cal_red)
+
+
+cal_red$wts <- 1/fitted(lm(abs(residuals(mod_ols_red)) ~ cal_red$Measurement))^2
+
+# #Plot for back-transforming
+# ggplot(cal, aes(x=Measurement)) +
+#   geom_point(aes(y= sqrt(1/wts))) +
+#   geom_smooth(aes(y = sqrt(1/wts)))
+
+mod_wls <- lm( Measurement ~ Offset + Situation, cal_red, weights = wts)
+
+# par( mfcol = c(1,2))
+# plot(mod_ols_red,1)
+# plot(mod_wls,1)
+# par( mfcol = c(1,1))
+
+(mod_wls$call$formula)
+
+```
+
+Bár ez a res. plotokat nem befolyásolja érdemben, de megnyugodhatunk, hogy kezeljük a problémát.
+
+```{r, fig.asp = .35}
+par( mfcol = c(1,2))
+plot(mod_ols_red,1,caption = "OLS res. plot")
+plot(mod_wls,1,caption = "WLS res. plot")
+par( mfcol = c(1,1))
+
+
+```
+
+## Eredmények I/III
+
+\fontsize{9pt}{7.2}\selectfont
+
+\vspace{.1in}
+
+A szintek mérésekor a WLS modell alapján a következő eredményeket kaphatjuk:  
+
+```{r, fig.align='center',collapse=TRUE}
+
+
+paste("Az én tömegem pred. intervalluma (babával):")
+marpred <- predict( mod_wls, newdata = data.frame( Situation = "M", Offset = 0), 
+                    se.fit = TRUE, interval = "prediction", 
+                    weights = cal_red$wts[1]) %>%
+                          .$fit %>%
+                            round(.,2)
+marpred
+
+```
+```{r, fig.align='center',collapse=TRUE}
+
+paste("A feleségem tömegének pred. intervalluma:")
+predict( mod_wls, newdata = data.frame( Situation = "Zs", Offset = 0), 
+         se.fit = TRUE, interval = "prediction", weights = cal_red$wts[18]) %>%
+  .$fit %>%
+    round(.,2)
+
+```
+```{r, fig.align='center',collapse=TRUE}
+
+paste("A súlyok pred. intervalluma (def. szerint 0):")
+predict( mod_wls, newdata = data.frame( Situation = "S", Offset = 0), 
+         se.fit = TRUE, interval = "prediction", weights = cal_red$wts[20]) %>%
+  .$fit %>%
+    round(.,2)
+
+```
+
+Ehhez csupán a *variancia ~ mért tömeg* összefüggést specifikáltuk. Egyedül a súlyok tömegében rejlő bizonytalanságot (ami konyhamérleggel lett mérve...) hanyagoltuk el/engedtük meg, hogy a bizonytalanság ne a független változók oldalán jelentkezzen (MA; SMA regresszióval sincs nagy különbség).
+
+## Eredmények II/III
+
+\fontsize{9pt}{7.2}\selectfont
+
+\vspace{.1in}
+
+Ha **\textcolor{red}{feltesszük}**, hogy a pontbecslések pontosak, *\textcolor{red}{és}* hogy a súlyok tömegét is pontosan adtuk meg, kiszámolható az *\textcolor{blue}{"igazi"}* tömeg mérésenként.
+
+\vspace{.05in}
+
+Ezt felhasználva az eredeti WLS modell predikciós intervallumai a következőképpen alakulnak:
+
+\vspace{.05in}
+
+```{r, fig.asp = .4}
+
+newd <- cal_red[0,-2]
+newd <- rbind( newd, expand.grid( Situation = c("M","Zs","S"),
+                                     Offset = seq( -22, 27, 
+                                                   length.out = 300),
+                                  rep = as.factor("1"),
+                                  repno = 1))
+
+pr_wght <- predict(mod_wls,newdata=data.frame(Situation=c("M","Zs","S"),
+                                                Offset = 0,
+                                              rep = as.factor("1"),
+                                              repno = 1))
+pr_wght[3] <- 0 # from its definition
+
+cal_red$realweight <- ifelse( cal_red$Situation == "M", pr_wght[1], 
+                            ifelse( cal_red$Situation == "Zs", pr_wght[2], 0)) +
+                  cal_red$Offset
+
+cal_red$res_wls <- cal_red$Measurement - predict( mod_wls, newdata = cal_red)
+
+newd$realweight <- pr_wght[as.numeric(newd$Situation)] + newd$Offset
+
+newd <- newd[newd$realweight>=0,]
+
+# They overlap slightly, fixing manually...
+newd <- newd[ !(newd$Offset < -20.770 & newd$Situation == "Zs"),]
+newd <- newd[ !(newd$Offset < -21.260 & newd$Situation == "M"),]
+newd <- newd[ !(newd$Offset > 21.830 & newd$Situation == "Zs"),]
+
+
+newd$pred_wls       <- predict( mod_wls,newdata = newd)
+
+wts_mod <- lm(sqrt(1/wts) ~ Measurement,cal_red)
+newd$pred_wls_wght  <- 1/predict( wts_mod, newdata = data.frame( Measurement = newd$pred_wls))^2
+
+newd$pred_wls_lowci <- predict( mod_wls,
+                                   newdata = newd, 
+                                   se.fit = TRUE, 
+                                   interval = "prediction",
+                                   weights = newd$pred_wls_wght)$fit[,2]
+
+newd$pred_wls_higci <- predict( mod_wls,
+                                 newdata = newd, 
+                                 se.fit = TRUE, 
+                                 interval = "prediction",
+                                 weights = newd$pred_wls_wght
+                                 )$fit[,3]
+
+
+ggplot( newd, aes( x = realweight)) +
+  def_th +
+  geom_point(aes(x = realweight, y = res_wls), data = cal_red, alpha = .25) +
+  geom_line(aes(y=pred_wls - pred_wls), color = "salmon4") +
+  geom_line(aes(y=pred_wls_lowci - pred_wls), linetype = "dashed") +
+  geom_line(aes(y=pred_wls_higci - pred_wls), linetype = "dashed") +
+  xlim(0,110) +
+  xlab("Tömeg (kg)") +
+  ylab("Tolerancia intrvallum; különbség \naz 'igazi' tömegtől (kg)")
+
+
+```
+
+Az alak magyarázata, hogy csak relatíve kicsi tartományban mértünk újra súlyokkal (a súlyok mérésének a bizonytalansága tehát megjelenik, csak nem ideális módon).
+
+## Eredmények III/III
+
+\fontsize{9pt}{7.2}\selectfont
+
+\vspace{.1in}
+
+Ha a súlyok méréséből adódó bizonytalanságot teljesen elhanyagoljuk (tehát a kapott ~ WLS által prediktált értékeket nézzük), és fenntrtjuk a varianciára vonatkozó feltételezést, akkor az alábbi, kékkel jelölt (már tényleg kalibrációs görbének tűnő) eredményeket kapjuk:
+
+```{r, fig.asp = .5}
+
+mod3 <- lm(pred_wls~realweight, weights = pred_wls_wght, data = newd)
+
+newd2 <- expand.grid( realweight= seq(5,120,length.out = 100))
+
+wcoef <- with(newd,lm(sqrt(1/pred_wls_wght)~pred_wls)$coefficients)
+
+newd2$wgt  <- newd2$realweight*wcoef[2] + wcoef[1]
+newd2$wgt  <- newd2$wgt^-2
+
+
+pred <- predict( mod3, newdata = newd2, interval = "predict", weights = newd2$wgt)
+
+newd2 <- cbind(newd2,pred)
+
+ggplot( newd2, aes( x = realweight)) +
+  def_th +
+  geom_point(aes(x = realweight, y = res_wls), data = cal_red, alpha = .25) +
+  geom_line(aes(y=fit-fit), color = "salmon4") +
+  geom_line(aes(y=lwr - fit), linetype = "dashed", color = "blue") +
+  geom_line(aes(y=upr - fit), linetype = "dashed", color = "blue") +
+  geom_line(aes(x = realweight, y=pred_wls - pred_wls), data = newd, color = "salmon4") +
+  geom_line(aes(x = realweight, y=pred_wls_lowci - pred_wls), data = newd, linetype = "dashed") +
+  geom_line(aes(x = realweight, y=pred_wls_higci - pred_wls), data = newd, linetype = "dashed") +
+  xlim(0,110) +
+  xlab("Weight (kg)") +
+  ylab("Tolerance interval; difference from \n the 'real' weight (kg)") +
+  labs(caption= "Prediction intervals based on the original WLS model (gray)
+and after supposing perfectly described ballasts (formerly as 'Offset').")
+
+```
+
+
+## Értelmezés
+
+\fontsize{9pt}{7.2}\selectfont
+
+\vspace{.1in}
+
+ * 80 kg környékén már akár .5 kg bizonytalanság is lehet a 'naív' mérési eredményben.
+ 
+\vspace{.1in}
+
+ * **\textcolor{red}{'Felháborító'!}** (Létjogosultságukat vesztik a 'na jó, újramérem zokni nélkül' típusú gondolatok...)
+
+\vspace{.1in}
+
+ * Ilyen hibákkal nehéz lehet ajánlott ütemű (.5-1 kg/hét) testsúlycsökkenést követni (amit én szeretnék produkálni és követni is).
+
+\vspace{.1in}
+
+ * A **\textcolor{blue}{releváns kérdés}** megfogalmazása is érdekes - az izom/zsírtömegemet szeretném követni, *nem* az a közvetlen problémám, hogy nem 'látok' egy pohár megivott vizet
+
+\vspace{.1in}
+
+ * Az étkezések gyakorlatilag zavarnak, többféle módon 'pakolnak' az emberre tömeget
+
+## Második* kísérlet
+
+\fontsize{9pt}{7.2}\selectfont
+
+\vspace{.1in}
+
+Egy kb. egy hónapos időszakban (a szokásosnál gyakrabban, de ad hoc jelleggel, kb. 2 hét kihagyással) gyűjtöttem a testtömeg értékeimet.  
+\vspace{.04in}
+A mérések során rögzítettem az utolsó étkezés óta eltelt időt (és minden esetben az étkezés utáni 'baseline' értéket).  
+\vspace{.04in}
+Étkezések között csak kalóriamentes folyadékot fogyasztottam.
+\vspace{.04in}
+
+```{r, message = FALSE, fig.asp=.5}
+
+library(readr)
+library(effects)
+library(lme4)
+library(ggplot2)
+library(splines)
+library(kableExtra)
+library(dplyr)
+library(directlabels)
+library(mgcv)
+library(mgcViz)
+
+
+fast_sleep      <- read_delim("~/R/Projects/Fasting/fast_sleep/fast_sleep_data.txt", 
+                              "\t", 
+                              escape_double = FALSE, 
+                              locale = locale(date_format   = "%Y.%m.%d",                                                                  decimal_mark  = ",", 
+                                              grouping_mark = ""), 
+                              trim_ws = TRUE)
+
+fast_sleep$time <- as.numeric(
+                     fast_sleep$Day_offset * 24 * 3600 + 
+                     fast_sleep$Time_of_measurement - 
+                     fast_sleep$Finished_eating
+                   ) / 3600
+
+fast_sleep$twu     <- as.numeric(fast_sleep$Time_of_measurement - fast_sleep$Woke_up) / 3600
+fast_sleep$twu     <- ifelse( fast_sleep$twu > fast_sleep$time, fast_sleep$time, fast_sleep$twu)
+fast_sleep         <- fast_sleep[is.na(fast_sleep$Mass)==FALSE,]
+fast_sleep$change  <- fast_sleep$Mass - fast_sleep$Last_fed_weight
+fast_sleep$date    <- as.numeric( difftime( fast_sleep$Date_beginning + fast_sleep$Day_offset, fast_sleep$Date_beginning[1])/ (24*3600))
+fast_sleep$Episode <- as.factor( fast_sleep$Episode)
+fast_sleep$truedate <- fast_sleep$date + lubridate::hour(fast_sleep$Time_of_measurement)/24
+
+
+ggplot(fast_sleep, aes( x = time, y = Mass, group = Episode, color = Date_beginning)) +
+  theme_bw() +
+  theme( legend.position = "none",
+               text = element_text( family = "serif"),
+         plot.caption = element_text( vjust = 0,
+                                      hjust = 0)) +
+  geom_line(size = .5, linetype = "twodash") +
+  geom_point( shape = 15, size = 1.8) +
+  scale_color_gradient( low="gray70",high="black") +
+  xlab( "Time since last meal (hours)") +
+  ylab( "Body mass (kg)") +
+  labs(caption = "Collected measurements over time; lighter shades of grey indicates earlier collection dates.
+Measurements collected in the same period of fasting are connected with dashed lines.")
+
+```
+
+
+\fontsize{6pt}{7.2}\selectfont
+*Ez időben a kalibrálás előtt történt, ezért a testtömeg értékek - sajnos - location shiftnek vannak kitéve
+
+
+## Kitérő - biztonságosság
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.1in}
+
+ * Pár napos (és talán meglepő módon jóval hosszabb) koplalást más források is vizsgáltak egészségeseken \[1-3]
+
+\vspace{.05in}
+
+ * A ("kezdőkben") koplalás közben jelentkező fejfájás *nem* az alacsony vércukorszint jele (nálam, ld. ábra).
+
+
+
+
+```{r, fig.asp=.4, message = FALSE}
+
+feed <- read_delim("~/R/Projects/Fasting/Fast_2x24h_OGTT_study/Copy of feeding.csv", 
+                              ";", escape_double = FALSE, trim_ws = TRUE,locale=locale(decimal_mark = ","))
+
+feed <- as.data.frame(feed)
+
+feed$tseom <- as.numeric(as.POSIXct( feed[,1], format = "%Y.%m.%d %H:%M") - as.POSIXct( feed[8,1], format = "%Y.%m.%d %H:%M"))
+feed$tseom <- feed$tseom + 1140
+feed$tseom <- feed$tseom / 3600
+
+feed[feed$tseom > -10 ,] %>%
+  .[is.na(.$`Blood Glucose`) == FALSE,] %>%
+    .[.$Period != 2,] %>%
+ggplot( ., aes(x = tseom, y = `Blood Glucose`)) +
+  theme_bw() +
+  theme( legend.position = "none",
+               text = element_text( family = "serif"),
+         plot.caption = element_text( vjust = 0,
+                                      hjust = 0)) +
+  geom_point(color = "dodgerblue", size = 2.5) +
+  stat_summary(aes(y = `Blood Glucose`), fun=mean, colour="grey50", geom="line", size = 1.3,  linetype = 'dashed') +
+  geom_hline(yintercept = 3.5, color = 'salmon4', linetype = "dashed") +
+  geom_hline(yintercept = 11, color = 'salmon4') +
+  xlab("Time since the end of meal (hours)") +
+  ylab("Blood Glucose (mmol/l)") +
+  scale_y_continuous( breaks = c(3.5, 5.6, 7, 11)) #+
+  # geom_label( label = "Sleeping", aes(x =x,y = y),
+  #             data = data.frame(x=10.5,y=3.5),
+  #             hjust = 0, vjust = 0)
+
+
+```
+
+\fontsize{6pt}{7.2}\selectfont
+
+1: Zauner 2000 - https://pubmed.ncbi.nlm.nih.gov/10837292  
+
+\vspace{.03in}  
+
+2: Fung 2016 (előadás) https://www.youtube.com/watch?v=tIuj-oMN-Fk  
+
+\vspace{.03in}  
+
+3: Finnel 2018 https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5819235/ 
+
+## Az adatsor
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.1in}
+
+A megfigyelések nem kiegyensúlyozottak a dokumentált periódusban; 74 mérésből áll 18 periódusból.
+
+
+```{r, fig.asp=.3}
+
+ggplot(fast_sleep, aes( x = Date_beginning, y = time, group = Episode)) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  geom_line(size = .5, linetype = "twodash") +
+  geom_point( aes(color = Mass), shape = 15, size = 1.8) +
+  xlab( "Date of first measurement (2020)") +
+  ylab( "Time since last meal (hours)")
+  #geom_hline(yintercept=24, color = "salmon4")
+  #labs(caption = "Distribution of measurements in the data collection period.")
+
+```
+
+Az ébredéstől eltelt órákat is feljegyztem, ezek azonban nem tűntek relevánsnak.  
+A megfigyeléseket első körben GAM-modellekkel vizsgáltam, az ébren töltött órákat pedig a továbbiakban elhanyagolom.
+
+```{r, fig.asp=.3}
+
+mod_gam <- gam(Mass ~ s(time, bs = "ts") + 
+                      s(truedate, bs = "ts") + 
+                      s(Last_fed_weight, bs = "ts") + 
+                      s(twu, bs = "ts"), 
+               data = fast_sleep)
+
+#mod_gam
+
+viz <- getViz(mod_gam)
+#anova(mod_gam)
+
+
+p <- plot(viz, allTerms = F, select = 4) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  l_points(shape = 19, size = .5, alpha = 1) +
+  l_fitLine( size = 1.3) +
+  l_ciLine(colour = 2) +
+  xlab("Time since waking up (hours)") +
+  ylab("Predicted smoothed term") +
+  labs( caption = "Plot representing the importance of 'time since wakeup'.
+Points represent the partial residuals, approximate 95% CI is noted with dashed lines.")
+  
+
+print(p, pages = 1)
+
+
+```
+
+## Linearitás vizsgálata GAM modellel
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.1in}
+
+A (kis számú megfigyelésre állított!) GAM megközelítés szerint
+
+ * az étkezés utáni tömeggel mint 'baseline' korrekcióval \textcolor{blue}{lineárisan} lehet célszerű korrigálni (ha a különbségre vagyunk kíváncsiak), 
+ * az étkezés óta eltelt időt egy \textcolor{blue}{alacsony fokszámú spline-nal/polinommal} lehetne vizsgálni, illetve
+ * a hosszútávú változást egy \textcolor{blue}{magasabb szabadsági fokú} spline-nal lehet érdemes figyelembe venni.
+
+
+```{r}
+
+mod_gam <- gam(Mass ~ s(time, bs = "ts") + 
+                      s(truedate, bs = "ts") + 
+                      s(Last_fed_weight, bs = "ts"), 
+               data = fast_sleep)
+
+anova(mod_gam)
+
+```
+
+## GAM javaslat *tömeg ~ idő* összefüggésekre
+
+```{r, fig.asp=.35}
+
+
+viz <- getViz(mod_gam)
+
+p <- plot(viz, allTerms = F, select = 1) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  l_points(shape = 19, size = .5, alpha = 1) +
+  l_fitLine( size = 1.3) +
+  l_ciLine(colour = 2) +
+  xlab("Time since last meal (hours)") +
+  ylab("Predicted smoothed term") +
+  labs( caption = "Plot representing the smoothed term. Points represent the partial residuals, approximate 95% CI is noted with dashed lines.")
+
+
+print(p, pages = 1)
+
+```
+
+\vspace{.1in}
+
+```{r, fig.asp=.35}
+
+p <- plot(viz, allTerms = F, select = 2) +
+  theme_bw() +
+  theme( legend.position = "none",
+         plot.caption =  element_text(vjust = .0, hjust = .0, margin=margin(t=15)),
+         text = element_text(family = "serif")) +
+  l_points(shape = 19, size = .5, alpha = 1) +
+  l_fitLine( size = 1.3) +
+  l_ciLine(colour = 2) +
+  xlab("Days since 2020.11.02") +
+  ylab("Predicted smoothed term") +
+  labs( caption = "Plot representing the smoothed term. Points represent the partial residuals, approximate 95% CI is noted with dashed lines.")
+
+
+print(p, pages = 1)
+
+```
+
+
+## Predikciók pontossága
+
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.1in}
+
+Vegyük észre, hogy amíg a kalibrált görbénél 90 kg környékén a SE kb. *`r round( (marpred[3] - marpred[2])/(2*1.96), 2)`* kg, a GAM modell **\textcolor{blue}{fix}** részének a bizonytalansága sok esetben ennél kisebb. (Bár maga a modell nehezen vehető komolyan.)
+
+```{r, fig.asp = .3}
+
+data.frame( se = predict(mod_gam, se.fit=T)$se.fit) %>%
+  ggplot(., aes(x = se)) +
+    def_th +
+    geom_histogram( binwidth=.01, fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+    geom_vline(xintercept=.13, color = 'red') +
+    ylab("") +
+    xlab("Histogram of the (approximate) SE of predictions")
+
+```
+
+```{r, fig.height=9, fig.align = 'center'}
+
+par(mfcol=c(1,2))
+gam.check(mod_gam, pch = 19, cex = 2)
+par(mfcol=c(1,1))
+
+```
+
+## (Kevert-) Modellezés splineokkal, a koplalás hatására
+
+\fontsize{8pt}{7.2}\selectfont
+\vspace{.1in}
+
+Kevert modelleket vizsgáltam, ahol *\textcolor{blue}{korrellálatlan random slope/intercepttel}* jellemeztem a koplalás hatását.  
+AIC és BIC alapján néztem a prediktorok bevonhatóságát természetes splineokkal.  
+Egy másodfokú spline-nal érdemes bevonni a koplalás idejét, és egyszerű baseline-korrekcióval az utolsó étkezéskor mért tömeget.  
+
+```{r, fig.asp=.28, message = FALSE}
+library(splines)
+library(car)
+
+Spline_BIC <- expand.grid( 
+                   time = 1:3,
+                   twu  = 0:0,
+                   lfw  = 1:3,
+                   dat  = 0:10,
+                   interact = c(F),
+                   BIC  = 0,
+                   AIC  = 0,
+                   VIF  = 0,
+                   f = "")
+Spline_BIC$f <- as.character(Spline_BIC$f)
+pb   <- txtProgressBar()
+
+for ( i in 1:nrow(Spline_BIC)) {
+  
+  ##### 
+  ###Generáljuk a "formulát"
+  f1 <- ifelse( Spline_BIC$time[i] == 0,
+                paste( "Mass ~ "),
+                paste( "Mass ~ ns(time,", 
+                       Spline_BIC$time[i],
+                      ")"))
+  f2 <- ifelse( Spline_BIC$interact[i] == TRUE, "*", "+")
+  
+  f3 <- ifelse( Spline_BIC$dat[i] == 0, "",
+                paste( " ns(truedate,", 
+                       Spline_BIC$dat[i],")"))
+
+  f4 <- ifelse( Spline_BIC$lfw[i] == 0, "",
+                paste( " + ns(Last_fed_weight,", 
+                       Spline_BIC$lfw[i],")"))
+  
+  f5 <- ifelse( Spline_BIC$twu[i] == 0, "",
+                paste( " + ns(twu,", 
+                       Spline_BIC$twu[i],")"))
+  
+
+  f <- paste(f1,f2,f3,f4,f5, "+(time||Episode)")
+  Spline_BIC$f[i] <- f
+  f       <- as.formula(f)
+  #####
+  
+  .b <- -1000
+  .a <- -1000
+  try( silent = TRUE, expr = {
+    m <- lmer( f, 
+              data = fast_sleep)
+    .b <- BIC(m)
+    .a <- AIC(m)
+    .v <- max(car::vif(m))
+    Spline_BIC$BIC[i] <- .b
+    Spline_BIC$AIC[i] <- .a
+    Spline_BIC$VIF[i] <- .v
+  })
+  
+  #setTxtProgressBar(pb, i/nrow(Spline_BIC)) # if progressbar is desired
+  
+}
+close(pb)
+Spline_BIC <- Spline_BIC[Spline_BIC$BIC != -1000,]
+
+Spline_BIC %>%
+  .[Spline_BIC$VIF < 10,] %>%
+    ggplot( ., aes( x = dat, y = BIC, group = interact, color = as.factor(lfw))) +
+      def_th +
+      geom_point(size=2) +
+      facet_wrap(facets="time", labeller = label_both) +
+      scale_x_continuous(breaks=c(0,3,5,7,9)) +
+      xlab("df. of the spline modelling the effect of date") +
+  labs(caption="Facets represent the df. of the spline modelling the effect of hours fasted.
+Points in different color represent mdels in which the last fed weight is included with splines.
+Only models where the VIF of the most suspect term was < 10 are presented.")
+
+Spline_BIC %>%
+  .[Spline_BIC$VIF < 10,] %>%
+    ggplot( ., aes( x = dat, y = AIC, group = interact, color = as.factor(lfw))) +
+      def_th +
+      geom_point(size=2) +
+      facet_wrap(facets="time", labeller = label_both) +
+      scale_x_continuous(breaks=c(0,3,5,7,9)) +
+      xlab("df. of the spline modelling the effect of date") +
+  labs(caption="Facets represent the df. of the spline modelling the effect of hours fasted.
+Points in different color represent mdels in which the last fed weight is included with splines.
+Only models where the VIF of the most suspect term was < 10 are presented.")
+
+```
+
+## Modellezés splineokkal, a koplalás hatására - diagnosztika
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.1in}
+
+A modelldiagnosztikák (majdnem) megfelelők, a koplalási periódusokra (belőlük számított testtömeg-változásra) adott predikciók lent láthatók.
+
+```{r, fig.show="hold", out.width="40%",fig.align='center'}
+library(splines)
+
+mod_lmer   <- lmer( Mass ~ Last_fed_weight + ns( time, df = 2)
+                   + (time||Episode), 
+                  fast_sleep)
+plot(mod_lmer, pch = 19)
+
+ggpubr::ggqqplot(residuals(mod_lmer))
+
+
+```
+
+
+```{r, fig.show="hold", out.width="40%",fig.align='center', message = FALSE}
+library(merTools)
+library(splines)
+set.seed(1234)
+
+fast_sleep_cor <- fast_sleep
+fast_sleep_cor$pred <- predict( mod_lmer)
+
+
+predFun <- function(fit) {
+  predict(fit,allow.new.levels=FALSE)
+}
+
+bb <- bootMer(mod_lmer, nsim=300, FUN=predFun, seed=2718, 
+              use.u=TRUE, # Conditional on observed random effects!
+              type="parametric")
+
+fast_sleep_cor <- t( sapply(1:nrow(fast_sleep),
+                            function(x)quantile(bb$t[,x],
+                                                c(.025,.5,.975)))) %>%
+                    cbind(fast_sleep_cor, .)
+
+colnames( fast_sleep_cor)[(ncol(fast_sleep_cor)-2):
+                            (ncol(fast_sleep_cor))] <- c("bootlwr",
+                                                         "bootmed",
+                                                         "bootupr")
+
+fast_sleep_cor$se <- with( fast_sleep_cor, (bootupr-bootlwr)/(2*1.96))
+
+#hist(fast_sleep_cor$se)
+
+#with( fast_sleep_cor, plot(pred,bootmed)) #practically the same
+
+ggplot( fast_sleep_cor, aes( x = time, 
+                             y = bootmed, 
+                             group = Episode, 
+                             #color = Date_beginning
+                             )) +
+  def_th +
+  geom_line()
+
+ggplot( fast_sleep_cor, aes( x = time, 
+                             y = bootmed - Last_fed_weight, 
+                             group = Episode, 
+                             #color = Date_beginning
+                             )) +
+  def_th +
+  geom_line()
+
+```
+
+## "Pontosság"
+
+\fontsize{8pt}{7.2}\selectfont
+\vspace{.1in}
+
+A **\textcolor{red}{random hatásokra feltételes}**, bootstrap alapján becsült predikciós intervallum bizonytalansága igen kicsi.  
+Ez a megközelítés a *\textcolor{blue}{koplalás ~ testtömeg}* modellezésére igen jó *(R^2 analóg mérték: `r paste(round(MuMIn::r.squaredGLMM(mod_lmer)[1,1],2))`; `r paste(round(MuMIn::r.squaredGLMM(mod_lmer)[1,2],2))` a random hatásokra kondicionálva)*, de *a napról-napra történő változás figyelembevételére nem*.  
+
+```{r, fig.show="hold", out.width="45%",fig.align='center', message = FALSE}
+
+
+ggplot( fast_sleep_cor, aes( x = truedate, 
+                             y = bootmed, 
+                             group = Episode
+                             )) +
+  theme_bw() +
+  geom_line() +
+  geom_line(aes(y=bootlwr), color="salmon4",linetype="dashed") +
+  geom_line(aes(y=bootupr), color="salmon4",linetype="dashed")
+  
+
+ggplot(fast_sleep_cor, aes(x = se)) +
+  def_th +
+  geom_histogram( binwidth=.01, fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+  geom_vline(xintercept=.13, color = 'red') +
+  ylab("") +
+  xlab("Histogram of the (approximate) SE of predictions")
+
+
+```
+
+```{r, fig.asp=.3}
+library(splines)
+predictorEffects(mod_lmer,residuals=TRUE,confint=list(compute=FALSE)) %>%
+  plot(., ylim = c(73.5,77))
+```
+
+
+## Tömeg modellezése ('baseline' nélkül)
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.1in}
+
+A koplalási idő bevétele *df=2*, a dátum bevétele a modellbe BIC alapján egy *df=3* spline-nal ajánlott.  
+*(Az AIC df=5-ös ajánlása esetén konvergencia problémák jelentkeztek, magasabb df alkalmazása esetén a VIF is nő.)*
+
+```{r, fig.asp=.3, message = FALSE}
+library(splines)
+
+Spline_BIC <- expand.grid( 
+                   time = 1:3,
+                   twu  = 0:0,
+                   lfw  = 0:0,
+                   dat  = 1:10,
+                   interact = c(F),
+                   BIC  = 0,
+                   AIC  = 0,
+                   VIF  = 0,
+                   f = "")
+Spline_BIC$f <- as.character(Spline_BIC$f)
+pb   <- txtProgressBar()
+
+for ( i in 1:nrow(Spline_BIC)) {
+  
+  ##### 
+  ###Generáljuk a "formulát"
+  f1 <- ifelse( Spline_BIC$time[i] == 0,
+                paste( "Mass ~ "),
+                paste( "Mass ~ ns(time,", 
+                       Spline_BIC$time[i],
+                      ")"))
+  f2 <- ifelse( Spline_BIC$interact[i] == TRUE, "*", "+")
+  
+  f3 <- ifelse( Spline_BIC$dat[i] == 0, "",
+                paste( " ns(date,", 
+                       Spline_BIC$dat[i],")"))
+
+  f4 <- ifelse( Spline_BIC$lfw[i] == 0, "",
+                paste( " + ns(Last_fed_weight,", 
+                       Spline_BIC$lfw[i],")"))
+  
+  f5 <- ifelse( Spline_BIC$twu[i] == 0, "",
+                paste( " + ns(twu,", 
+                       Spline_BIC$twu[i],")"))
+  
+
+  f <- paste(f1,f2,f3,f4,f5,"+(time||Episode)")
+  Spline_BIC$f[i] <- f
+  f       <- as.formula(f)
+  #####
+  
+  .b <- -1000
+  .a <- -1000
+  try( silent = TRUE, expr = {
+    m <- lmer( f, 
+              data = fast_sleep #,
+                      )
+    .b <- BIC(m)
+    .a <- AIC(m)
+    .v <- max(car::vif(m))
+  })
+  
+  Spline_BIC$BIC[i] <- .b
+  Spline_BIC$AIC[i] <- .a
+  Spline_BIC$VIF[i] <- .v
+  #setTxtProgressBar(pb, i/nrow(Spline_BIC))
+  
+}
+close(pb)
+Spline_BIC <- Spline_BIC[Spline_BIC$BIC != -1000,]
+
+Spline_BIC %>%
+  .[Spline_BIC$VIF < 10,] %>%
+    ggplot( ., aes( x = dat, y = BIC, group = interact)) +
+      def_th +
+      geom_point(size=2) +
+      facet_wrap(facets="time", labeller = label_both) +
+      scale_x_continuous(breaks=c(0,3,5,7,9)) +
+      xlab("df. of the spline modelling the effect of date") +
+  labs(caption="Facets represent the df. of the spline modelling the effect of hours fasted.
+Points in different color represent mdels in which the last fed weight is included with splines.
+Only models where the VIF of the most suspect term was < 10 are presented.")
+
+Spline_BIC %>%
+  .[Spline_BIC$VIF < 10,] %>%
+    ggplot( ., aes( x = dat, y = AIC, group = interact)) +
+      def_th +
+      geom_point(size=2) +
+      facet_wrap(facets="time", labeller = label_both) +
+      scale_x_continuous(breaks=c(0,3,5,7,9)) +
+      xlab("df. of the spline modelling the effect of date") +
+  labs(caption="Facets represent the df. of the spline modelling the effect of hours fasted.
+Points in different color represent mdels in which the last fed weight is included with splines.
+Only models where the VIF of the most suspect term was < 10 are presented.")
+
+```
+
+## Tömeg modellezése
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.1in}
+
+AIB/BIC/LR teszt alapján ebben az esetben *\textcolor{red}{korrelált}* random slope/intercept modell javallott (a random slope kivétele rontott a modellen).  
+Az így összeállított modell fontosabb diagnosztikái elfogadhatók.
+
+```{r, fig.show="hold", out.width="40%",fig.align='center'}
+library(splines)
+
+
+mod_massmod_b   <- lmer( Mass ~ ns( time, df = 2) 
+                       + ns( truedate, df = 3)
+                       + (time|Episode),
+                  fast_sleep)
+plot(mod_massmod_b, pch = 19)
+
+ggpubr::ggqqplot(residuals(mod_massmod_b))
+
+
+```
+
+
+```{r, fig.show="hold", out.width="40%",fig.align='center', message = FALSE}
+library(merTools)
+library(splines)
+set.seed(1234)
+
+fast_sleep_massmod <- fast_sleep
+fast_sleep_massmod$pred <- predict( mod_massmod_b)
+
+fast_sleep_massmod <- predictInterval(mod_massmod_b,newdata = fast_sleep, 
+                                      which = 'fixed', level = .95, 
+                                      include.resid.var = FALSE,
+                                      n.sims = 2000) %>%
+  cbind(fast_sleep_massmod,.)
+# ONLY FOR THE FIXED TERM, use with caution!!
+
+
+fast_sleep_massmod$se <- with( fast_sleep_massmod, (upr-lwr)/(2*1.96))
+
+#hist(fast_sleep_massmod$se)
+
+#with( fast_sleep_massmod, plot(pred,fit))
+
+```
+
+
+```{r, fig.asp=.3}
+  
+ggplot( fast_sleep_massmod, aes( x = time, 
+                             y = fit, 
+                             group = Episode, 
+                             color = Date_beginning)) +
+  def_th +
+  geom_line()
+
+
+```
+
+## "Pontosság"
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.1in}
+
+A **\textcolor{red}{random hatásokra feltételes}**, **\textcolor{blue}{fix}** komponens bizonytalansága - általában - nem jobb a mérleg *ab ovo* vett bizonytalanságával (*lmerTest* alapján).
+
+
+```{r, fig.show="hold", out.width="45%",fig.align='center', message = FALSE}
+
+ggplot( fast_sleep_massmod, aes( x = truedate,
+                             y = fit,
+                             group = Episode
+                             )) +
+  theme_bw() +
+  geom_line() +
+  geom_line(aes(y=lwr), color="salmon4",linetype="dashed") +
+  geom_line(aes(y=upr), color="salmon4",linetype="dashed")
+
+
+  ggplot(fast_sleep_massmod, aes(x = se)) +
+    def_th +
+    geom_histogram( binwidth=.01, fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+    geom_vline(xintercept=.13, color = 'red') +
+    ylab("") +
+    xlab("Histogram of the (approximate) SE of predictions")
+
+
+```
+
+```{r, fig.asp=.3}
+library(splines)
+predictorEffects(mod_massmod_b,residuals=TRUE,confint=list(compute=FALSE)) %>%
+  plot(.,ylim=c(74,77))
+```
+
+3: https://cran.r-project.org/web/packages/merTools/vignettes/Using_predictInterval.html 
+
+
+## Predikciók I/II
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.1in}
+
+Ha a (*random hatásokra kondícionált*) **fix** hatások (közelített) bizonytalanságát tekintjük irányadónak, kiemelhetők bizonyos időszakok, amikor a modell kisebb hibával becsülte a testtömeget a közeli étkezések hatása nélkül(!)  
+
+```{r, fig.asp=.3}
+library(splines)
+
+newdata <- expand.grid( time = 8,
+                        truedate = seq(0,31, length.out = 1000),
+                        Episode = as.factor(1))
+
+
+newdata <- predictInterval(mod_massmod_b, newdata = newdata, 
+                                      which = 'fixed', level = .95, 
+                                      include.resid.var = FALSE,
+                                      n.sims = 2000) %>%
+  cbind(newdata,.)
+
+newdata$se <- with( newdata, (upr-lwr)/(2*1.96))
+
+ggplot( newdata, aes( x = truedate, 
+                             y = fit)) +
+  def_th +
+  geom_line() +
+  geom_line(aes(y = fit + 1.96 * se),color= "salmon4",linetype="dashed") +
+  geom_line(aes(y = fit - 1.96 * se),color= "salmon4",linetype="dashed") +  
+  geom_point( aes(x = truedate, y = fit), 
+              data = newdata[newdata$se < .13,], 
+              color = "salmon4") +
+    geom_point( data = fast_sleep, aes(x = truedate, y = Mass), color = "grey50")
+
+
+ggplot( newdata, aes( x = truedate, 
+                      y = se)) +
+  def_th +
+  geom_line() +
+  geom_hline(yintercept = .13, color='red')
+
+
+
+```
+
+## Predikciók II/II
+
+\fontsize{8pt}{7.2}\selectfont
+\vspace{.05in}
+
+Ha a (random hatásokra kondícionált) fix hatások (közelített) bizonytalanságát tekintjük irányadónak, kiemelhetők bizonyos időszakok, amikor a modell kisebb hibával becsülte a testtömeget **\textcolor{blue}{a közeli étkezések hatása nélkül}**(!) *(R^2 analóg mérték: `r paste(round(MuMIn::r.squaredGLMM(mod_massmod_b)[1,1],2))`; `r paste(round(MuMIn::r.squaredGLMM(mod_massmod_b)[1,2],2))` a random hatásokra kondicionálva.)*
+
+```{r, fig.asp=.7}
+library(splines)
+
+newdata <- expand.grid( time = c(0, 8, 16, 24, 32),
+                        truedate = seq(0,31, length.out = 100),
+                        Episode = as.factor(1))
+
+
+newdata <- predictInterval(mod_massmod_b, newdata = newdata, 
+                                      which = 'fixed', level = .95, 
+                                      include.resid.var = FALSE,
+                                      n.sims = 200) %>%
+  cbind(newdata,.)
+
+newdata$se <- with( newdata, (upr-lwr)/(2*1.96))
+
+newdata %>%
+      ggplot( ., aes( x = truedate, 
+                                   y = fit,
+                            group = time,
+                            color = time)) +
+        def_th +
+        geom_line() +
+        geom_point( data = fast_sleep, aes(x = truedate, y = Mass, color = time))
+
+```
+
+
+## Tanulságok
+
+\fontsize{9pt}{7.2}\selectfont
+\vspace{.03in}
+
+ * A jelen felállás csak **\textcolor{red}{asszociációt}** hivatott kimutatni!
+
+\vspace{.01in}
+
+ * A gyakorlatban a *standardizálás* jelentőségét lehetne kiemelni (pl. csak reggelente mérjünk testtömeget)
+
+\vspace{.01in}
+
+ * Bevallottan sok plusz munkával lehet javítani a mérés pontosságát (*"akár"* ~40%-kal kisebb szórás...!)
+
+\vspace{.01in}
+
+ * Számos out-of-the-box, IoT megoldás elérhető különböző paraméterek méréséhez, mégis meg lehet kérdőjelezni egy egyszerű mérleg eredményeit (miért nem normálisak a mérési hibák...?)
+
+\vspace{.01in}
+
+ * Az adatgyűjtést mindezek ellenére manuálisan kellett intéznem
+
+\vspace{.01in}
+
+ * Az ilyen megoldások generált outputjai, jelentései sokszor még szórakozásnak sem jók
+ 
+\includegraphics{"xamp_online.png"}
+ 
+ * ...még egy vizsgálható adatsor, reprodukálható eredményekkel
+ 
+ 
+ 
+ 
+ 
+
+

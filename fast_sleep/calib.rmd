@@ -6,11 +6,12 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       fig.align = 'center')
+options(warn=-1)
 ```
 
 ## Introduction
 
-I have become fed up with my *lying* "smart" bathroom scale! I am deeply convinced that it gives false(ly high) results. I am feeling especially sceptic if I for exampe take off a heavy sweater (as an unoffending example) and measure myself again, and get the same results! Of course it says that the "accuracy" of the scale is .1 kg but that is blatantly not the case. Clealy, something has to be done.
+I have become fed up with my *lying* "smart" bathroom scale! I am deeply convinced that it gives false(ly high) results. I am feeling especially skeptic if I for exampe take off a heavy sweater (as an unoffending example) and measure myself again, and get the same results! Of course it says in the manual that the "accuracy" of the scale is .1 kg but that is blatantly not the case. Clearly, something has to be done!
 
 ## Experimental design
 
@@ -142,17 +143,17 @@ We can find the predictions for the three 'situations'. These are prediction int
 
 paste("Prediction for my weight (with baby):")
 predict( mod_wls, newdata = data.frame( Situation = "M", Offset = 0), 
-         se.fit = TRUE, interval = "prediction", weights = cal$wts[1])$fit
+         se.fit = TRUE, interval = "prediction", weights = cal_red$wts[1])$fit
 paste()
 
 paste("Prediction for my wife's weight:")
 predict( mod_wls, newdata = data.frame( Situation = "Zs", Offset = 0), 
-         se.fit = TRUE, interval = "prediction", weights = cal$wts[1])$fit
+         se.fit = TRUE, interval = "prediction", weights = cal_red$wts[1])$fit
 paste()
 
 paste("Prediction for weighing the ballasts (should be 0):")
 predict( mod_wls, newdata = data.frame( Situation = "S", Offset = 0), 
-         se.fit = TRUE, interval = "prediction", weights = cal$wts[1])$fit
+         se.fit = TRUE, interval = "prediction", weights = cal_red$wts[1])$fit
 ```
 
 We can see that there is a ~.5 kg uncertainty. 
@@ -249,7 +250,7 @@ ggplot( newd, aes( x = realweight)) +
   ylim(70,75)  +
   xlab("Weight (kg)") +
   ylab("Average weight reported (kg)") +
-  labs( cap = "Red: OLS model, black: WLS model")
+  labs( caption = "Red: OLS model, black: WLS model")
   
 
 
@@ -257,78 +258,41 @@ ggplot( newd, aes( x = realweight)) +
 
 ```
 
-```{r}
-
-# set.seed(1234)
-# nsim <- 1000
-# cal_sim <- cal_red
-# 
-# m <- predict( mod_wls, newdata = data.frame( Situation = "M", Offset = 0), 
-#          se.fit = TRUE, interval = "prediction", weights = cal_red$wts[1])$fit[c(2,3)]
-# 
-# m_sd <- (m[2] - m[1]) / (2 * 1.96)
-#   
-# z <- predict( mod_wls, newdata = data.frame( Situation = "Zs", Offset = 0), 
-#          se.fit = TRUE, interval = "prediction", weights = cal_red$wts[1])$fit[c(2,3)]
-# 
-# z_sd <- (z[2] - z[1]) / (2 * 1.96)
-# 
-# m_mu <- rnorm(nsim, 0, m_sd)
-# z_mu <- rnorm(nsim, 0, z_sd)
-# 
-# newd_sim <- data.frame( Measurement = seq( 5,100, length.out = 200))
-# 
-# cf <- lm(sqrt(1/cal_sim$wts)~cal_sim$Measurement)$coefficients
-# 
-# newd_sim$wts <- cf[1] + cf[2] * newd_sim$Measurement
-# newd_sim$wts <- 1/newd_sim$wts^2
-# 
-# out_fit <- matrix(data=rep(0, 200*nsim), ncol = 200)
-# out_lwr <- matrix(data=rep(0, 200*nsim), ncol = 200)
-# out_upr <- matrix(data=rep(0, 200*nsim), ncol = 200)
-# 
-# 
-# 
-# for (i in 1:nsim) {
-#   
-#   cal_sim$realweight_sim <-  cal_sim$realweight + ifelse( 
-#                             cal_sim$Situation == "M", m_mu[i], 
-#                               ifelse( cal_sim$Situation == "Zs", z_mu[i], 0
-#                                       )) +
-#                    ifelse( cal_sim$Situation == "S", 0, cal_sim$Offset)
-#   
-#   mod <- lm( realweight_sim ~ Measurement, weights = cal_sim$wts, cal_sim)
-#   out_fit[i,] <- predict(mod, newdata = newd_sim, interval = "prediction", 
-#                      weights = newd_sim$wts)[,1] # fit
-#   out_lwr[i,] <- predict(mod, newdata = newd_sim, interval = "prediction", 
-#                      weights = newd_sim$wts)[,2]
-#   out_upr[i,] <- predict(mod, newdata = newd_sim, interval = "prediction", 
-#                      weights = newd_sim$wts)[,3]
-#   
-# }
-
-```
+If we wish to 
 
 ```{r}
 
-# fit <- sapply(1:ncol(out_fit), FUN=function(x){quantile(out_fit[,x],c(.025,.5,.975))})
-# upr <- sapply(1:ncol(out_upr), FUN=function(x){quantile(out_upr[,x],c(.025,.5,.975))})
-# lwr <- sapply(1:ncol(out_lwr), FUN=function(x){quantile(out_lwr[,x],c(.025,.5,.975))})
-# 
-# newd_sim <- cbind( newd_sim, t(fit), t(upr), t(lwr) )
-# 
-# colnames( newd_sim)[3:11] <- c("fit_low","fit_med","fit_high","upr_low","upr_med","upr_high","lwr_low","lwr_med","lwr_high")
+mod3 <- lm(pred_wls~realweight, weights = pred_wls_wght, data = newd)
+
+newd2 <- expand.grid( realweight= seq(5,120,length.out = 100))
+
+wcoef <- with(newd,lm(sqrt(1/pred_wls_wght)~pred_wls)$coefficients)
+
+newd2$wgt  <- newd2$realweight*wcoef[2] + wcoef[1]
+newd2$wgt  <- newd2$wgt^-2
+
+
+pred <- predict( mod3, newdata = newd2, interval = "predict", weights = newd2$wgt)
+
+newd2 <- cbind(newd2,pred)
+
+ggplot( newd2, aes( x = realweight)) +
+  theme_bw() +
+  geom_point(aes(x = realweight, y = res_wls), data = cal_red, alpha = .25) +
+  geom_line(aes(y=fit-fit), color = "salmon4") +
+  geom_line(aes(y=lwr - fit), linetype = "dashed", color = "blue") +
+  geom_line(aes(y=upr - fit), linetype = "dashed", color = "blue") +
+  geom_line(aes(x = realweight, y=pred_wls - pred_wls), data = newd, color = "salmon4") +
+  geom_line(aes(x = realweight, y=pred_wls_lowci - pred_wls), data = newd, linetype = "dashed") +
+  geom_line(aes(x = realweight, y=pred_wls_higci - pred_wls), data = newd, linetype = "dashed") +
+  xlim(0,110) +
+  xlab("Weight (kg)") +
+  ylab("Tolerance interval; difference from the 'real' weight (kg)")
+
 ```
 
-```{r}
 
-# ggplot( newd_sim, aes( x = Measurement, y = 0)) +
-#   geom_line() +
-#   geom_line( aes(y=Measurement -fit_med))
-
-```
-
-To acknowledge the fact that errors could be on both sides of the regression, one should use Major Axis (or Semi major axis) regression. However it doesn't make much of a difference.
+To acknowledge the fact that errors could be on both sides of the regression, one should (have) use(d) Major Axis (or Semi major axis) regression. However it doesn't make much of a difference (and there are less packages/tools available for it).
 
 ```{r}
 mod_MA <- lmodel2::lmodel2( Measurement ~ realweight, data = cal_red)

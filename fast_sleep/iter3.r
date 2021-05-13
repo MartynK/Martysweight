@@ -34,6 +34,7 @@ fast_sleep         <- fast_sleep[is.na(fast_sleep$Mass)==FALSE,]
 fast_sleep$change  <- fast_sleep$Mass - fast_sleep$Last_fed_weight
 fast_sleep$date    <- as.numeric( difftime( fast_sleep$Date_beginning + fast_sleep$Day_offset, fast_sleep$Date_beginning[1])/ (24*3600))
 fast_sleep$Episode <- as.factor( fast_sleep$Episode)
+fast_sleep$truedate <- fast_sleep$date + lubridate::hour(fast_sleep$Time_of_measurement)/24
 
 
 ### Descriptive stuff
@@ -239,8 +240,23 @@ newdata <- expand.grid( time = seq(0,30,length.out = 8),
 newdata$pred <- predict(mod, newdata = newdata)
 
 ggplot(newdata, aes(x = date, y = pred, group= time, color = time)) +
+  theme_bw() +
   geom_line() +
-  scale_color_gradient( low="black",high="gray70")
+  scale_color_gradient( low="black",high="gray70") +
+  geom_point( aes( x = truedate, y = Mass, color = time), data = fast_sleep, size = 2.5)
+
+
+
+# nsim <- 201
+# 
+# predFun <- function(fit) {
+#   predict(fit, newdata, allow.new.levels = TRUE, re.form = NULL)
+# }
+# 
+# bb <- bootMer( mod, nsim = nsim, FUN = predFun, seed = 420, use.u = FALSE, 
+#                type = 'parametric')
+
+
 
 library(emmeans)
 pred <- summary(emmeans(mod,specs=c("date","time"),cov.reduce=FALSE,
@@ -249,4 +265,8 @@ pred <- summary(emmeans(mod,specs=c("date","time"),cov.reduce=FALSE,
 ggplot( pred[pred$time == 0,], aes(x = date, y = lower.CL, group = time)) +
   geom_line() +
   geom_line(aes(y=upper.CL))
+
+
+
+
 

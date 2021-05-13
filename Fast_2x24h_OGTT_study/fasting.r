@@ -2,7 +2,7 @@ library(readr)
 library(ggplot2)
 library(splines)
 
-feed <- read_delim("B:/R stuff/Copy of feeding.csv", 
+feed <- read_delim("~/R/Projects/Fasting/Fast_2x24h_OGTT_study/Copy of feeding.csv", 
                               ";", escape_double = FALSE, trim_ws = TRUE,locale=locale(decimal_mark = ","))
 # View(Copy_of_feeding)
 
@@ -47,12 +47,17 @@ abline(h=7.8, col = 'red') # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC474964
 feed$tseom[feed$Period == 2] <- feed$tseom[feed$Period == 2] - feed$tseom[feed$Period == 2][1]
 
 
-ggplot( feed[feed$tseom > -3000 & is.na(feed$`Blood Glucose`) == FALSE,], 
-        aes(x = tseom, y = `Blood Glucose`, group = Period, color = Period)) +
+
+feed$tseom <- feed$tseom / 3600
+feed[feed$tseom > -10 ,] %>%
+  .[is.na(.$`Blood Glucose`) == FALSE,] %>%
+    .[.$Period != 2,] %>%
+ggplot( ., aes(x = tseom, y = `Blood Glucose`, group = Period, color = Period)) +
   geom_point() +
-  geom_smooth(formula=y~x,method='loess',span=.2)
-
-
+  stat_summary(aes(y = `Blood Glucose`), fun=mean, colour="grey70", geom="line", size = 1,  linetype = 'dashed') +
+  geom_hline(yintercept = 3.5) +
+  geom_hline(yintercept = 11) +
+  xlab("Time since the end of meal (hours)")
 
 
 
