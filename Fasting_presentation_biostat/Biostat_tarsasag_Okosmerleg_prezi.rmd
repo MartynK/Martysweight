@@ -609,7 +609,7 @@ print(p, pages = 1)
 \fontsize{9pt}{7.2}\selectfont
 \vspace{.1in}
 
-Vegyük észre, hogy amíg a kalibrált görbénél 90 kg környékén a SE kb. *`r round( (marpred[3] - marpred[2])/(2*1.96), 2)`* kg, a GAM modell **\textcolor{blue}{fix}** részének a bizonytalansága sok esetben ennél kisebb. (Bár maga a modell nehezen vehető komolyan.)
+Vegyük észre, hogy amíg a kalibrált görbénél 90 kg környékén a SE kb. *`r round( (marpred[3] - marpred[2])/(2*1.96), 2)`* kg, a GAM modell **\textcolor{blue}{prediktorainak}** a bizonytalansága sok esetben ennél kisebb. (Bár maga a modell nehezen vehető komolyan.)
 
 ```{r, fig.asp = .3}
 
@@ -862,7 +862,7 @@ Spline_BIC <- expand.grid(
                    time = 1:3,
                    twu  = 0:0,
                    lfw  = 0:0,
-                   dat  = 1:10,
+                   dat  = 0:10,
                    interact = c(F),
                    BIC  = 0,
                    AIC  = 0,
@@ -938,7 +938,7 @@ Spline_BIC %>%
       def_th +
       geom_point(size=2) +
       facet_wrap(facets="time", labeller = label_both) +
-      scale_x_continuous(breaks=c(0,3,5,7,9)) +
+      scale_x_continuous(breaks=c(0,1,3,5,7,9)) +
       xlab("df. of the spline modelling the effect of date") +
   labs(caption="Facets represent the df. of the spline modelling the effect of hours fasted.
 Points in different color represent mdels in which the last fed weight is included with splines.
