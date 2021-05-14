@@ -791,7 +791,9 @@ ggplot( fast_sleep_cor, aes( x = time,
                              #color = Date_beginning
                              )) +
   def_th +
-  geom_line()
+  geom_line() +
+  xlab("Koplalással eltöltött órák száma") +
+  ylab("Testtömeg (predikció, kg)")
 
 ggplot( fast_sleep_cor, aes( x = time, 
                              y = bootmed - Last_fed_weight, 
@@ -799,7 +801,9 @@ ggplot( fast_sleep_cor, aes( x = time,
                              #color = Date_beginning
                              )) +
   def_th +
-  geom_line()
+  geom_line() +
+  xlab("Koplalással eltöltött órák száma") +
+  ylab("Testtömeg változás (predikció alapján, kg)")
 
 ```
 
@@ -821,7 +825,9 @@ ggplot( fast_sleep_cor, aes( x = truedate,
   theme_bw() +
   geom_line() +
   geom_line(aes(y=bootlwr), color="salmon4",linetype="dashed") +
-  geom_line(aes(y=bootupr), color="salmon4",linetype="dashed")
+  geom_line(aes(y=bootupr), color="salmon4",linetype="dashed") +
+  xlab("Napok száma a megfigy. periódusban") +
+  ylab("Testtömeg (predikció, kg)")
   
 
 ggplot(fast_sleep_cor, aes(x = se)) +
@@ -834,7 +840,7 @@ ggplot(fast_sleep_cor, aes(x = se)) +
 
 ```
 
-```{r, fig.asp=.3}
+```{r, fig.asp=.27}
 library(splines)
 predictorEffects(mod_lmer,residuals=TRUE,confint=list(compute=FALSE)) %>%
   plot(., ylim = c(73.5,77))
@@ -996,7 +1002,9 @@ ggplot( fast_sleep_massmod, aes( x = time,
                              group = Episode, 
                              color = Date_beginning)) +
   def_th +
-  geom_line()
+  geom_line() +
+  xlab("Koplalással eltöltött órák száma") +
+  ylab("Testtömeg (predikció, kg)")
 
 
 ```
@@ -1018,7 +1026,9 @@ ggplot( fast_sleep_massmod, aes( x = truedate,
   theme_bw() +
   geom_line() +
   geom_line(aes(y=lwr), color="salmon4",linetype="dashed") +
-  geom_line(aes(y=upr), color="salmon4",linetype="dashed")
+  geom_line(aes(y=upr), color="salmon4",linetype="dashed") +
+  xlab("Napok száma a megfigy. periódusban") +
+  ylab("Testtömeg (predikció, kg)")
 
 
   ggplot(fast_sleep_massmod, aes(x = se)) +
@@ -1072,14 +1082,18 @@ ggplot( newdata, aes( x = truedate,
   geom_point( aes(x = truedate, y = fit), 
               data = newdata[newdata$se < .13,], 
               color = "salmon4") +
-    geom_point( data = fast_sleep, aes(x = truedate, y = Mass), color = "grey50")
+    geom_point( data = fast_sleep, aes(x = truedate, y = Mass), color = "grey50") +
+  xlab("Napok száma a megfigy. periódusban") +
+  ylab("Testtömeg (predikció, kg)")
 
 
 ggplot( newdata, aes( x = truedate, 
                       y = se)) +
   def_th +
   geom_line() +
-  geom_hline(yintercept = .13, color='red')
+  geom_hline(yintercept = .13, color='red') +
+  xlab("Napok száma a megfigy. periódusban") +
+  ylab("'SE'")
 
 
 
@@ -1115,12 +1129,14 @@ newdata %>%
                             color = time)) +
         def_th +
         geom_line() +
-        geom_point( data = fast_sleep, aes(x = truedate, y = Mass, color = time))
+        geom_point( data = fast_sleep, aes(x = truedate, y = Mass, color = time)) +
+  xlab("Napok száma a megfigy. periódusban") +
+  ylab("Testtömeg (predikció, kg)")
 
 ```
 
 
-## Tanulságok
+## Megjegyzések, tanulságok
 
 \fontsize{9pt}{7.2}\selectfont
 \vspace{.03in}
@@ -1130,10 +1146,12 @@ newdata %>%
  * **\textcolor{red}{TILOS}** meggondolatlanul extrapolálni egy adott ember adataiból!
 
  * A gyakorlatban a *standardizálás* jelentőségét lehetne kiemelni (pl. csak reggelente mérjünk testtömeget)
+ 
+ * Az ilyen jellegű tájékozódásoknál a mintavétel kényelme a szakmai szempontok rovására mehet 
 
  * Bevallottan sok plusz munkával lehet javítani a mérés pontosságát (*"akár"* ~40%-kal kisebb szórás...!)
 
- * Számos out-of-the-box, IoT megoldás elérhető különböző paraméterek méréséhez, mégis meg lehet kérdőjelezni egy egyszerű mérleg eredményeit (miért nem normálisak a mérési hibák...?)
+ * Számos out-of-the-box, IoT megoldás elérhető különböző (nem túl fantáziadús) paraméterek méréséhez, mégis meg lehet kérdőjelezni egy egyszerű mérleg eredményeit (miért nem normálisak a mérési hibák...?)
 
  * Az adatgyűjtést mindezek ellenére manuálisan kellett intéznem
 
@@ -1141,10 +1159,20 @@ newdata %>%
  
 \includegraphics{"xamp_online.png"}
  
- * ...még egy vizsgálható adatsor, reprodukálható eredményekkel
+
  
  
+## Mi történt?
  
+  * Prezentáltam egy ötletet hogy hogyan lehet egyszerűen (?) kalibrálni a fürdőszobamérlegünket
+  
+  \vspace{.03in}
+  
+  * Bemutattam két (szabadon használható/terjeszthető) vizsgálható adatsort, reprodukálható eredményekkel
+  
+  \vspace{.03in}
+  
+  * Demonstráltam, hogy - bizonyos feltételekkel - az étkezéstől eltelt idő figyelembevételével akár a mérleg pontosságát meghaladóan modellezhetjük a testtömeget
  
  
 

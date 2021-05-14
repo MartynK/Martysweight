@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.5.11)  14 MAY 2021 10:54
+This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.5.11)  14 MAY 2021 14:18
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1650,7 +1650,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-23-1.p
 df>
 
-Overfull \vbox (46.7892pt too high) detected at line 599
+Overfull \vbox (37.3997pt too high) detected at line 599
  []
 
 [18
@@ -1740,10 +1740,12 @@ Overfull \vbox (28.2139pt too high) detected at line 685
 File: xamp_online.png Graphic file (type bmp)
 <xamp_online.png>
 
-Overfull \vbox (5.36206pt too high) detected at line 725
+Overfull \vbox (8.19205pt too high) detected at line 723
  []
 
 [24
+
+] [25
 
 ]
 \tf@nav=\write6
@@ -1761,12 +1763,12 @@ ot changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 27069 strings out of 478774
- 591354 string characters out of 5862448
- 897235 words of memory out of 5000000
- 46417 multiletter control sequences out of 15000+600000
+ 27071 strings out of 478774
+ 591370 string characters out of 5862448
+ 897291 words of memory out of 5000000
+ 46419 multiletter control sequences out of 15000+600000
  423201 words of font info for 81 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  101i,13n,110p,1836b,574s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on Biostat_tarsasag_Okosmerleg_prezi.pdf (24 pages).
+Output written on Biostat_tarsasag_Okosmerleg_prezi.pdf (25 pages).
