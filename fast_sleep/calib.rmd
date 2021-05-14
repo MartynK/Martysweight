@@ -1,6 +1,14 @@
 ---
-title: "Calibration of my bathroom scale"
-output: html_document
+name: "Bathroom scale calibration"
+title: "Bathroom scale calibration"
+description: | 
+  Calibrating my bathroom scale with dumbbells & loved ones
+date: May 14, 2021
+author:
+  - first_name: "Márton"
+    last_name: "Kiss"
+    url: https://github.com/MartynK
+output: distill::distill_article
 ---
 
 ```{r setup, include=FALSE}
@@ -258,7 +266,7 @@ ggplot( newd, aes( x = realweight)) +
 
 ```
 
-If we wish to 
+If we wish to force the matter regarding the shape of the *variance ~ mass* curve, then we could refit the WLS model to the computed 'correct' masses.
 
 ```{r}
 

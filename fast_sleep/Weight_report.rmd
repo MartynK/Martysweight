@@ -1,12 +1,13 @@
 ---
-title: "Untitled"
-description: |
-  "A new article created using the Distill format."
+name: "Fasting weights"
+title: "Fasting Weights"
+description: | 
+  Modelling my weight when fasting
+date: May 14, 2021
 author:
-    name: Marton Kiss
+  - first_name: "Márton"
+    last_name: "Kiss"
     url: https://github.com/MartynK
-    affiliation: -
-date: "`r Sys.Date()`"
 output: distill::distill_article
 ---
 
@@ -29,7 +30,13 @@ library(directlabels)
 library(mgcv)
 library(mgcViz)
 
-
+def_th <- theme_bw() +
+        theme( legend.position = "none",
+               plot.caption = element_text( vjust = 0,
+                                            hjust = 0#,
+                                            #margin(t=15)
+                                            ),
+               text = element_text( family = "serif"))
 
 fast_sleep      <- read_delim("fast_sleep_data.txt", 
                               "\t", 
@@ -314,7 +321,7 @@ plot((pred_mass$fit[,3] - pred_mass$fit[,2])/(2*1.96),
 Let's see what we can do with mixed models! I'll try to select a random intercept/slope model (without correlation between the terms). Models with high multicollinearity (VIF>10) should be shunned. Model selection is done via AIC and BIC values.
 
 ```{r}
-
+library(splines)
 
 Spline_BIC <- expand.grid( 
                    time = 0:3,
@@ -366,11 +373,11 @@ for ( i in 1:nrow(Spline_BIC)) {
     .b <- BIC(m)
     .a <- AIC(m)
     .v <- max(car::vif(m))
+    Spline_BIC$BIC[i] <- .b
+    Spline_BIC$AIC[i] <- .a
+    Spline_BIC$VIF[i] <- .v
   })
   
-  Spline_BIC$BIC[i] <- .b
-  Spline_BIC$AIC[i] <- .a
-  Spline_BIC$VIF[i] <- .v
   setTxtProgressBar(pb, i/nrow(Spline_BIC))
   
 }
@@ -686,51 +693,51 @@ MuMIn::r.squaredGLMM(mod_massmod_b)
 
 
 ```{r}
-set.seed(1234)
-
-fast_sleep_massmod <- fast_sleep
-fast_sleep_massmod$pred <- predict( mod_massmod)
-
-fast_sleep_massmod <- predictInterval(mod_massmod_b,newdata = fast_sleep, 
-                                      which = 'fixed', level = .95, 
-                                      include.resid.var = FALSE,
-                                      n.sims = 2000) %>%
-  cbind(fast_sleep_massmod,.)
-# ONLY FOR THE FIXED TERM, use with caution!!
-
-
-fast_sleep_massmod$se <- with( fast_sleep_massmod, (upr-lwr)/(2*1.96))
-
-hist(fast_sleep_massmod$se)
-
-with( fast_sleep_massmod, plot(pred,fit))
-
-ggplot( fast_sleep_massmod, aes( x = time, 
-                             y = fit - Last_fed_weight, 
-                             group = Episode, 
-                             color = Date_beginning)) +
-  theme_bw() +
-  geom_line()
-  
-ggplot( fast_sleep_massmod, aes( x = time, 
-                             y = fit, 
-                             group = Episode, 
-                             color = Date_beginning)) +
-  theme_bw() +
-  geom_line()
-
-ggplot( fast_sleep_massmod, aes( x = truedate, 
-                             y = fit, 
-                             group = Episode#, 
-                             #color = time
-                             )) +
-  theme_bw() +
-  geom_line() +
-  geom_line(aes(y=lwr), color="salmon4",linetype="dashed") +
-  geom_line(aes(y=upr), color="salmon4",linetype="dashed")
-  
-
-plotREsim(REsim(mod_massmod_b, n.sims=2000))  # plot the interval estimates
+# set.seed(1234)
+# 
+# fast_sleep_massmod <- fast_sleep
+# fast_sleep_massmod$pred <- predict( mod_massmod)
+# 
+# fast_sleep_massmod <- predictInterval(mod_massmod_b,newdata = fast_sleep, 
+#                                       which = 'fixed', level = .95, 
+#                                       include.resid.var = FALSE,
+#                                       n.sims = 2000) %>%
+#   cbind(fast_sleep_massmod,.)
+# # ONLY FOR THE FIXED TERM, use with caution!!
+# 
+# 
+# fast_sleep_massmod$se <- with( fast_sleep_massmod, (upr-lwr)/(2*1.96))
+# 
+# hist(fast_sleep_massmod$se)
+# 
+# with( fast_sleep_massmod, plot(pred,fit))
+# 
+# ggplot( fast_sleep_massmod, aes( x = time, 
+#                              y = fit - Last_fed_weight, 
+#                              group = Episode, 
+#                              color = Date_beginning)) +
+#   theme_bw() +
+#   geom_line()
+#   
+# ggplot( fast_sleep_massmod, aes( x = time, 
+#                              y = fit, 
+#                              group = Episode, 
+#                              color = Date_beginning)) +
+#   theme_bw() +
+#   geom_line()
+# 
+# ggplot( fast_sleep_massmod, aes( x = truedate, 
+#                              y = fit, 
+#                              group = Episode#, 
+#                              #color = time
+#                              )) +
+#   theme_bw() +
+#   geom_line() +
+#   geom_line(aes(y=lwr), color="salmon4",linetype="dashed") +
+#   geom_line(aes(y=upr), color="salmon4",linetype="dashed")
+#   
+# 
+# plotREsim(REsim(mod_massmod_b, n.sims=2000))  # plot the interval estimates
 
 
 ```
@@ -745,22 +752,22 @@ newdata <- expand.grid( time = 8,
                         Episode = as.factor(1))
 
 
-newdata <- predictInterval(mod_massmod_b, newdata = newdata, 
-                                      which = 'fixed', level = .95, 
+newdata <- predictInterval(mod_massmod_b, newdata = newdata,
+                                      which = 'fixed', level = .95,
                                       include.resid.var = FALSE,
                                       n.sims = 2000) %>%
   cbind(newdata,.)
 
 newdata$se <- with( newdata, (upr-lwr)/(2*1.96))
 
-ggplot( newdata, aes( x = truedate, 
+ggplot( newdata, aes( x = truedate,
                              y = fit)) +
   theme_bw() +
   geom_line() +
   geom_line(aes(y = fit + 1.96 * se),color= "salmon4") +
-  geom_line(aes(y = fit - 1.96 * se),color= "salmon4") +  
-  geom_point( aes(x = truedate, y = fit), 
-              data = newdata[newdata$se < .13,], 
+  geom_line(aes(y = fit - 1.96 * se),color= "salmon4") +
+  geom_point( aes(x = truedate, y = fit),
+              data = newdata[newdata$se < .13,],
               color = "salmon4") +
     geom_point( data = fast_sleep, aes(x = truedate, y = Mass), color = "grey50")
 
@@ -771,8 +778,8 @@ abline( a = .1 , b = 0, col = 'pink')
 
 
 # md <- JWileymisc::modelDiagnostics(mod_massmod_b, ev.perc = .001)
-# 
-# plot(md, ask = FALSE, ncol = 
+#
+# plot(md, ask = FALSE, ncol =
 #        23, nrow = 3)
 
 

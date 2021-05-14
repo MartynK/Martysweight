@@ -52,9 +52,6 @@ def_th <- theme_bw() +
                                             ),
                text = element_text( family = "serif"))
 
-# def_th <- theme_bw() +
-#         theme( legend.position = "none",
-#                text = element_text( family = "serif"))
 
 cal <- readxl::read_xlsx("~/R/Projects/Fasting/fast_sleep/scales_calib.xlsx")
 cal$Situation <- as.factor( cal$Situation)
@@ -1122,23 +1119,15 @@ newdata %>%
 
  * A jelen felállás csak **\textcolor{red}{asszociációt}** hivatott kimutatni!
 
-\vspace{.01in}
+ * **\textcolor{red}{TILOS}** meggondolatlanul extrapolálni egy adott ember adataiból!
 
  * A gyakorlatban a *standardizálás* jelentőségét lehetne kiemelni (pl. csak reggelente mérjünk testtömeget)
 
-\vspace{.01in}
-
  * Bevallottan sok plusz munkával lehet javítani a mérés pontosságát (*"akár"* ~40%-kal kisebb szórás...!)
-
-\vspace{.01in}
 
  * Számos out-of-the-box, IoT megoldás elérhető különböző paraméterek méréséhez, mégis meg lehet kérdőjelezni egy egyszerű mérleg eredményeit (miért nem normálisak a mérési hibák...?)
 
-\vspace{.01in}
-
  * Az adatgyűjtést mindezek ellenére manuálisan kellett intéznem
-
-\vspace{.01in}
 
  * Az ilyen megoldások generált outputjai, jelentései sokszor még szórakozásnak sem jók
  

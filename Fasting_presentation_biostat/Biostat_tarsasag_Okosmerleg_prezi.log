@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.5.11)  13 MAY 2021 17:20
+This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.5.11)  13 MAY 2021 17:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1735,7 +1735,7 @@ Overfull \vbox (28.2139pt too high) detected at line 677
 File: xamp_online.png Graphic file (type bmp)
 <xamp_online.png>
 
-Overfull \vbox (29.67552pt too high) detected at line 745
+Overfull \vbox (5.36206pt too high) detected at line 717
  []
 
 [24
