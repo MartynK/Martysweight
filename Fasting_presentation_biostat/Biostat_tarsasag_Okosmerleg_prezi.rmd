@@ -6,6 +6,8 @@ date: '2020 05 14'
 output: binb::metropolis
 ---
 
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, cache = TRUE, warning = FALSE)
 ```
@@ -30,6 +32,12 @@ A következőkben:
  
  * Röviden megemlékezem a  **\textcolor{blue}{"self-tracking"}** jelenségéről és az általánosan alkalmazott eljárások korlátairól 
 
+\fontsize{6pt}{7.2}\selectfont
+Forrásadatok, kódok:
+
+https://github.com/MartynK/Martysweight  
+https://github.com/MartynK/Martysweight/blob/master/Fasting_presentation_biostat/Biostat_tarsasag_Okosmerleg_prezi.pdf   
+https://martynk.github.io/Martysweight/ (coming soon...)
 
 
 ## Kísérleti felállás - kalibráció

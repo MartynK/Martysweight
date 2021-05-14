@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.5.11)  13 MAY 2021 17:47
+This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.5.11)  14 MAY 2021 10:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1440,11 +1440,20 @@ Overfull \vbox (15.63992pt too high) detected at line 130
 
 [1
 
-] [2
+]
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <6> on input line 179.
+LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <6> not available
+(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 179.
+
+Overfull \vbox (15.13783pt too high) detected at line 179
+ []
+
+[2
 
 ]
 LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <9> not available
-(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 187.
+(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 195.
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-1-1.p
 df Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-1-1.pd
@@ -1467,7 +1476,7 @@ df Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-4-1.pd
 f>
 )
-Overfull \vbox (9.95515pt too high) detected at line 233
+Overfull \vbox (9.95515pt too high) detected at line 241
  []
 
 [5
@@ -1483,7 +1492,7 @@ df Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-8-1.pd
 f>
 
-Overfull \vbox (6.91417pt too high) detected at line 295
+Overfull \vbox (6.91417pt too high) detected at line 303
  []
 
 [7
@@ -1503,7 +1512,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-10-1.p
 df>
 
-Overfull \vbox (28.757pt too high) detected at line 389
+Overfull \vbox (28.757pt too high) detected at line 397
  []
 
 [10
@@ -1513,12 +1522,8 @@ File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-11-1.
 pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-11-1.p
 df>
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 428.
-LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <6> not available
-(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 428.
 
-Overfull \vbox (20.34746pt too high) detected at line 428
+Overfull \vbox (20.34746pt too high) detected at line 436
  []
 
 [11
@@ -1533,7 +1538,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-13-1.p
 df>
 
-Overfull \vbox (49.42514pt too high) detected at line 448
+Overfull \vbox (49.42514pt too high) detected at line 456
  []
 
 [12
@@ -1559,10 +1564,10 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-16-1.p
 df>
 LaTeX Font Info:    Font shape `TU/lmss/bx/it' in size <12> not available
-(Font)              Font shape `TU/lmss/bx/sl' tried instead on input line 501.
+(Font)              Font shape `TU/lmss/bx/sl' tried instead on input line 509.
 
 
-Overfull \vbox (16.87479pt too high) detected at line 501
+Overfull \vbox (16.87479pt too high) detected at line 509
  []
 
 [14
@@ -1586,14 +1591,14 @@ Overfull \hbox (14.01022pt too wide) in paragraph at lines 33--33
  []
 
 )
-Overfull \vbox (274.81818pt too high) detected at line 537
+Overfull \vbox (274.81818pt too high) detected at line 545
  []
 
 [15
 
 ]
 LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <8> not available
-(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 556.
+(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 564.
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-19-1.
 pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-19-1.p
@@ -1603,7 +1608,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-19-2.p
 df>
 
-Overfull \vbox (16.38138pt too high) detected at line 556
+Overfull \vbox (16.38138pt too high) detected at line 564
  []
 
 [16
@@ -1626,7 +1631,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-21-2.p
 df>
 
-Overfull \vbox (11.35959pt too high) detected at line 572
+Overfull \vbox (11.35959pt too high) detected at line 580
  []
 
 [17
@@ -1645,7 +1650,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-23-1.p
 df>
 
-Overfull \vbox (46.7892pt too high) detected at line 591
+Overfull \vbox (46.7892pt too high) detected at line 599
  []
 
 [18
@@ -1660,7 +1665,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-24-2.p
 df>
 
-Overfull \vbox (24.53236pt too high) detected at line 607
+Overfull \vbox (24.53236pt too high) detected at line 615
  []
 
 [19
@@ -1679,7 +1684,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-27-1.p
 df>
 
-Overfull \vbox (22.7165pt too high) detected at line 624
+Overfull \vbox (22.7165pt too high) detected at line 632
  []
 
 [20
@@ -1698,9 +1703,9 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-29-1.p
 df>
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9> on input line 644.
+(Font)              <9> on input line 652.
 
-Overfull \vbox (47.48631pt too high) detected at line 644
+Overfull \vbox (47.48631pt too high) detected at line 652
  []
 
 [21
@@ -1715,7 +1720,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-30-2.p
 df>
 
-Overfull \vbox (15.74843pt too high) detected at line 660
+Overfull \vbox (15.74843pt too high) detected at line 668
  []
 
 [22
@@ -1726,7 +1731,7 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-31-1.p
 df>
 
-Overfull \vbox (28.2139pt too high) detected at line 677
+Overfull \vbox (28.2139pt too high) detected at line 685
  []
 
 [23
@@ -1735,7 +1740,7 @@ Overfull \vbox (28.2139pt too high) detected at line 677
 File: xamp_online.png Graphic file (type bmp)
 <xamp_online.png>
 
-Overfull \vbox (5.36206pt too high) detected at line 717
+Overfull \vbox (5.36206pt too high) detected at line 725
  []
 
 [24
