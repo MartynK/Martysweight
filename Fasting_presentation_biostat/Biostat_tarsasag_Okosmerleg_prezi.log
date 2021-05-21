@@ -1,11 +1,11 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.5.11)  14 MAY 2021 14:52
+This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.5.21)  21 MAY 2021 14:14
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **Biostat_tarsasag_Okosmerleg_prezi.tex
 (./Biostat_tarsasag_Okosmerleg_prezi.tex
 LaTeX2e <2020-10-01> patch level 4
-L3 programming layer <2021-05-07>
+L3 programming layer <2021-05-11>
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/beamer/beamer.cls
 Document Class: beamer 2021/03/19 v3.62 A class for typesetting presentations
 
@@ -157,11 +157,11 @@ gfutil-latex.def
 gfrcs.code.tex
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/pgf.revisio
 n.tex)
-Package: pgfrcs 2020/12/27 v3.1.8b (3.1.8b)
+Package: pgfrcs 2021/05/15 v3.1.9a (3.1.9a)
 ))
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/systemlayer
 /pgfsys.code.tex
-Package: pgfsys 2020/12/27 v3.1.8b (3.1.8b)
+Package: pgfsys 2021/05/15 v3.1.9a (3.1.9a)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/utilities/p
 gfkeys.code.tex
@@ -195,33 +195,33 @@ gfkeysfiltered.code.tex
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/systemlayer
 /pgf.cfg
-File: pgf.cfg 2020/12/27 v3.1.8b (3.1.8b)
+File: pgf.cfg 2021/05/15 v3.1.9a (3.1.9a)
 )
 Driver file for pgf: pgfsys-xetex.def
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/systemlayer
 /pgfsys-xetex.def
-File: pgfsys-xetex.def 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfsys-xetex.def 2021/05/15 v3.1.9a (3.1.9a)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/systemlayer
 /pgfsys-dvipdfmx.def
-File: pgfsys-dvipdfmx.def 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfsys-dvipdfmx.def 2021/05/15 v3.1.9a (3.1.9a)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/systemlayer
 /pgfsys-common-pdf.def
-File: pgfsys-common-pdf.def 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfsys-common-pdf.def 2021/05/15 v3.1.9a (3.1.9a)
 )
 \pgfsys@objnum=\count274
 )))
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/systemlayer
 /pgfsyssoftpath.code.tex
-File: pgfsyssoftpath.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfsyssoftpath.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgfsyssoftpath@smallbuffer@items=\count275
 \pgfsyssoftpath@bigbuffer@items=\count276
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/systemlayer
 /pgfsysprotocol.code.tex
-File: pgfsysprotocol.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfsysprotocol.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 ))
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/xcolor/xcolor.sty
 Package: xcolor 2016/05/11 v2.12 LaTeX color extensions (UK)
@@ -242,7 +242,7 @@ Package xcolor Info: Model `wave' substituted by `hsb' on input line 1371.
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcore.code.tex
-Package: pgfcore 2020/12/27 v3.1.8b (3.1.8b)
+Package: pgfcore 2021/05/15 v3.1.9a (3.1.9a)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/math/pgfmat
 h.code.tex
@@ -285,7 +285,7 @@ hfloat.code.tex
 .code.tex)
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorepoints.code.tex
-File: pgfcorepoints.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorepoints.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgf@picminx=\dimen177
 \pgf@picmaxx=\dimen178
 \pgf@picminy=\dimen179
@@ -303,19 +303,19 @@ File: pgfcorepoints.code.tex 2020/12/27 v3.1.8b (3.1.8b)
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorepathconstruct.code.tex
-File: pgfcorepathconstruct.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorepathconstruct.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgf@path@lastx=\dimen191
 \pgf@path@lasty=\dimen192
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorepathusage.code.tex
-File: pgfcorepathusage.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorepathusage.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgf@shorten@end@additional=\dimen193
 \pgf@shorten@start@additional=\dimen194
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorescopes.code.tex
-File: pgfcorescopes.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorescopes.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgfpic=\box58
 \pgf@hbox=\box59
 \pgf@layerbox@main=\box60
@@ -323,64 +323,64 @@ File: pgfcorescopes.code.tex 2020/12/27 v3.1.8b (3.1.8b)
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcoregraphicstate.code.tex
-File: pgfcoregraphicstate.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcoregraphicstate.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgflinewidth=\dimen195
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcoretransformations.code.tex
-File: pgfcoretransformations.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcoretransformations.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgf@pt@x=\dimen196
 \pgf@pt@y=\dimen197
 \pgf@pt@temp=\dimen198
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorequick.code.tex
-File: pgfcorequick.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorequick.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcoreobjects.code.tex
-File: pgfcoreobjects.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcoreobjects.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorepathprocessing.code.tex
-File: pgfcorepathprocessing.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorepathprocessing.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorearrows.code.tex
-File: pgfcorearrows.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorearrows.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgfarrowsep=\dimen199
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcoreshade.code.tex
-File: pgfcoreshade.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcoreshade.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgf@max=\dimen256
 \pgf@sys@shading@range@num=\count280
 \pgf@shadingcount=\count281
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcoreimage.code.tex
-File: pgfcoreimage.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcoreimage.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcoreexternal.code.tex
-File: pgfcoreexternal.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcoreexternal.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgfexternal@startupbox=\box61
 ))
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorelayers.code.tex
-File: pgfcorelayers.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorelayers.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcoretransparency.code.tex
-File: pgfcoretransparency.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcoretransparency.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorepatterns.code.tex
-File: pgfcorepatterns.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorepatterns.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/basiclayer/
 pgfcorerdf.code.tex
-File: pgfcorerdf.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfcorerdf.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )))
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/pgf/utilities/xxc
 olor.sty
@@ -856,7 +856,7 @@ r XeLaTeX)
 /xparse.sty
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/l3kernel/expl3.st
 y
-Package: expl3 2021-05-07 L3 programming layer (loader) 
+Package: expl3 2021-05-11 L3 programming layer (loader) 
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/l3backend/l3backe
 nd-xetex.def
@@ -941,26 +941,26 @@ Package: beamerinnerthememetropolis 2017/01/23 Metropolis inner theme
 /tikz.sty
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/pgf/basiclayer/pg
 f.sty
-Package: pgf 2020/12/27 v3.1.8b (3.1.8b)
+Package: pgf 2021/05/15 v3.1.9a (3.1.9a)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/modules/pgf
 moduleshapes.code.tex
-File: pgfmoduleshapes.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfmoduleshapes.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgfnodeparttextbox=\box75
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/modules/pgf
 moduleplot.code.tex
-File: pgfmoduleplot.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfmoduleplot.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/pgf/compatibility
 /pgfcomp-version-0-65.sty
-Package: pgfcomp-version-0-65 2020/12/27 v3.1.8b (3.1.8b)
+Package: pgfcomp-version-0-65 2021/05/15 v3.1.9a (3.1.9a)
 \pgf@nodesepstart=\dimen291
 \pgf@nodesepend=\dimen292
 )
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/pgf/compatibility
 /pgfcomp-version-1-18.sty
-Package: pgfcomp-version-1-18 2020/12/27 v3.1.8b (3.1.8b)
+Package: pgfcomp-version-1-18 2021/05/15 v3.1.9a (3.1.9a)
 ))
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/pgf/utilities/pgf
 for.sty
@@ -970,7 +970,7 @@ sty
 h.code.tex))
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/utilities/p
 gffor.code.tex
-Package: pgffor 2020/12/27 v3.1.8b (3.1.8b)
+Package: pgffor 2021/05/15 v3.1.9a (3.1.9a)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/math/pgfmat
 h.code.tex)
@@ -981,11 +981,11 @@ h.code.tex)
 ))
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/frontendlay
 er/tikz/tikz.code.tex
-Package: tikz 2020/12/27 v3.1.8b (3.1.8b)
+Package: tikz 2021/05/15 v3.1.9a (3.1.9a)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/libraries/p
 gflibraryplothandlers.code.tex
-File: pgflibraryplothandlers.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgflibraryplothandlers.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgf@plot@mark@count=\count352
 \pgfplotmarksize=\dimen295
 )
@@ -1008,7 +1008,7 @@ File: pgflibraryplothandlers.code.tex 2020/12/27 v3.1.8b (3.1.8b)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/modules/pgf
 modulematrix.code.tex
-File: pgfmodulematrix.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: pgfmodulematrix.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 \pgfmatrixcurrentrow=\count357
 \pgfmatrixcurrentcolumn=\count358
 \pgf@matrix@numberofcolumns=\count359
@@ -1017,7 +1017,7 @@ File: pgfmodulematrix.code.tex 2020/12/27 v3.1.8b (3.1.8b)
 
 (c:/Users/Martyn/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/pgf/frontendlay
 er/tikz/libraries/tikzlibrarytopaths.code.tex
-File: tikzlibrarytopaths.code.tex 2020/12/27 v3.1.8b (3.1.8b)
+File: tikzlibrarytopaths.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )))
 \metropolis@titleseparator@linewidth=\skip67
 \metropolis@progressonsectionpage=\skip68
@@ -1468,17 +1468,12 @@ f>
 [4
 
 ]
-\openout4 = `Biostat_tarsasag_Okosmerleg_prezi.vrb'.
-
-(./Biostat_tarsasag_Okosmerleg_prezi.vrb
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <9> on input line 237.
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-4-1.p
 df Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-4-1.pd
 f>
-)
-Overfull \vbox (9.95515pt too high) detected at line 241
- []
-
 [5
 
 ]
@@ -1492,7 +1487,7 @@ df Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-8-1.pd
 f>
 
-Overfull \vbox (6.91417pt too high) detected at line 303
+Overfull \vbox (6.91417pt too high) detected at line 299
  []
 
 [7
@@ -1502,6 +1497,10 @@ File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-9-1.p
 df Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-9-1.pd
 f>
+
+Overfull \vbox (34.07007pt too high) detected at line 320
+ []
+
 [8
 
 ] [9
@@ -1533,15 +1532,24 @@ File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-12-1.
 pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-12-1.p
 df>
+
+Overfull \vbox (3.45142pt too high) detected at line 449
+ []
+
+[12
+
+] [13
+
+]
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-13-1.
 pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-13-1.p
 df>
 
-Overfull \vbox (49.42514pt too high) detected at line 456
+Overfull \vbox (11.45366pt too high) detected at line 487
  []
 
-[12
+[14
 
 ]
 \openout4 = `Biostat_tarsasag_Okosmerleg_prezi.vrb'.
@@ -1552,7 +1560,7 @@ Overfull \hbox (42.36024pt too wide) in paragraph at lines 38--38
 _fed_weight,[] 
  []
 
-) [13
+) [15
 
 ]
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-15-1.
@@ -1564,13 +1572,13 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-16-1.p
 df>
 LaTeX Font Info:    Font shape `TU/lmss/bx/it' in size <12> not available
-(Font)              Font shape `TU/lmss/bx/sl' tried instead on input line 509.
+(Font)              Font shape `TU/lmss/bx/sl' tried instead on input line 540.
 
 
-Overfull \vbox (16.87479pt too high) detected at line 509
+Overfull \vbox (16.87479pt too high) detected at line 540
  []
 
-[14
+[16
 
 ]
 \openout4 = `Biostat_tarsasag_Okosmerleg_prezi.vrb'.
@@ -1591,14 +1599,18 @@ Overfull \hbox (14.01022pt too wide) in paragraph at lines 33--33
  []
 
 )
-Overfull \vbox (274.81818pt too high) detected at line 545
+Overfull \vbox (274.81818pt too high) detected at line 576
  []
 
-[15
+[17
 
 ]
-LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <8> not available
-(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 564.
+Overfull \vbox (12.06352pt too high) detected at line 604
+ []
+
+[18
+
+]
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-19-1.
 pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-19-1.p
@@ -1608,10 +1620,10 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-19-2.p
 df>
 
-Overfull \vbox (16.38138pt too high) detected at line 564
+Overfull \vbox (22.29686pt too high) detected at line 621
  []
 
-[16
+[19
 
 ]
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-20-1.
@@ -1631,12 +1643,14 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-21-2.p
 df>
 
-Overfull \vbox (11.35959pt too high) detected at line 580
+Overfull \vbox (11.35959pt too high) detected at line 637
  []
 
-[17
+[20
 
 ]
+LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <8> not available
+(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 657.
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-22-1.
 pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-22-1.p
@@ -1650,10 +1664,19 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-23-1.p
 df>
 
-Overfull \vbox (37.3997pt too high) detected at line 599
+Overfull \vbox (37.3997pt too high) detected at line 657
  []
 
-[18
+[21
+
+]
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <8> on input line 688.
+
+Overfull \vbox (26.54346pt too high) detected at line 688
+ []
+
+[22
 
 ]
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-24-1.
@@ -1665,10 +1688,10 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-24-2.p
 df>
 
-Overfull \vbox (24.53236pt too high) detected at line 615
+Overfull \vbox (2.91917pt too high) detected at line 696
  []
 
-[19
+[23
 
 ]
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-25-1.
@@ -1684,10 +1707,10 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-27-1.p
 df>
 
-Overfull \vbox (22.7165pt too high) detected at line 632
+Overfull \vbox (22.7165pt too high) detected at line 713
  []
 
-[20
+[24
 
 ]
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-28-1.
@@ -1702,13 +1725,11 @@ File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-29-1.
 pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-29-1.p
 df>
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9> on input line 652.
 
-Overfull \vbox (47.48631pt too high) detected at line 652
+Overfull \vbox (47.48631pt too high) detected at line 733
  []
 
-[21
+[25
 
 ]
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-30-1.
@@ -1720,10 +1741,10 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-30-2.p
 df>
 
-Overfull \vbox (15.74843pt too high) detected at line 668
+Overfull \vbox (15.74843pt too high) detected at line 749
  []
 
-[22
+[26
 
 ]
 File: Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-31-1.
@@ -1731,21 +1752,21 @@ pdf Graphic file (type pdf)
 <use Biostat_tarsasag_Okosmerleg_prezi_files/figure-beamer/unnamed-chunk-31-1.p
 df>
 
-Overfull \vbox (28.2139pt too high) detected at line 685
+Overfull \vbox (28.2139pt too high) detected at line 766
  []
 
-[23
+[27
 
 ]
 File: xamp_online.png Graphic file (type bmp)
 <xamp_online.png>
 
-Overfull \vbox (8.19205pt too high) detected at line 723
+Overfull \vbox (8.19205pt too high) detected at line 804
  []
 
-[24
+[28
 
-] [25
+] [29
 
 ]
 \tf@nav=\write6
@@ -1763,12 +1784,12 @@ ot changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 27071 strings out of 478774
- 591370 string characters out of 5862448
- 897291 words of memory out of 5000000
- 46419 multiletter control sequences out of 15000+600000
- 423201 words of font info for 81 fonts, out of 8000000 for 9000
+ 27102 strings out of 478764
+ 591638 string characters out of 5862455
+ 899883 words of memory out of 5000000
+ 46464 multiletter control sequences out of 15000+600000
+ 426988 words of font info for 86 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 101i,13n,110p,1836b,574s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 101i,17n,110p,1836b,574s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on Biostat_tarsasag_Okosmerleg_prezi.pdf (25 pages).
+Output written on Biostat_tarsasag_Okosmerleg_prezi.pdf (29 pages).

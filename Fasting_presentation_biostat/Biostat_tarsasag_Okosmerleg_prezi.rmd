@@ -121,7 +121,7 @@ OLS alkalmazása esetén sértenénk a szóráshomogenitást (nagyobb súlyt nag
 
 Ennek egy egyszerű megoldása a megfigyelések újrasúlyozása a szórás változását feltételezve (itt *variancia ~ tömeg*).  
 
-Ilyen módon illesztjük a következő modellt:  
+$$T\ddot omeg = \beta_0 + \beta_1 \cdot Ballaszt + \beta_2 \cdot M\acute ert\:szitu\acute aci\acute o + \epsilon$$
 
 ```{r}
 cal_red <- cal[cal$repno ==1,]
@@ -143,7 +143,7 @@ mod_wls <- lm( Measurement ~ Offset + Situation, cal_red, weights = wts)
 # plot(mod_wls,1)
 # par( mfcol = c(1,1))
 
-(mod_wls$call$formula)
+#(mod_wls$call$formula)
 
 ```
 
@@ -284,7 +284,11 @@ Az alak magyarázata, hogy csak relatíve kicsi tartományban mértünk újra s�
 
 \vspace{.1in}
 
-Ha a súlyok méréséből adódó bizonytalanságot teljesen elhanyagoljuk (tehát a kapott ~ WLS által prediktált értékeket nézzük), és fenntrtjuk a varianciára vonatkozó feltételezést, akkor az alábbi, kékkel jelölt (már tényleg kalibrációs görbének tűnő) eredményeket kapjuk:
+Ha a súlyok méréséből adódó bizonytalanságot teljesen elhanyagoljuk (tehát a kapott ~ WLS által prediktált értékeket nézzük), és fenntrtjuk a varianciára vonatkozó feltételezést, akkor az alábbi, kékkel jelölt (már tényleg kalibrációs görbének tűnő) eredményeket kapjuk:  
+
+A modell:  
+
+$$M\acute ert\:T\ddot omeg = \beta_0 + \beta_1 \cdot Igazi\: t\ddot omeg + \epsilon$$
 
 ```{r, fig.asp = .5}
 
@@ -482,7 +486,7 @@ ggplot( ., aes(x = tseom, y = `Blood Glucose`)) +
 A megfigyelések nem kiegyensúlyozottak a dokumentált periódusban; 74 mérésből áll 18 periódusból.
 
 
-```{r, fig.asp=.3}
+```{r, fig.asp=.6}
 
 ggplot(fast_sleep, aes( x = Date_beginning, y = time, group = Episode)) +
   theme_bw() +
@@ -498,10 +502,35 @@ ggplot(fast_sleep, aes( x = Date_beginning, y = time, group = Episode)) +
 
 ```
 
-Az ébredéstől eltelt órákat is feljegyztem, ezek azonban nem tűntek relevánsnak.  
-A megfigyeléseket első körben GAM-modellekkel vizsgáltam, az ébren töltött órákat pedig a továbbiakban elhanyagolom.
+## Linearitás vizsgálata
 
-```{r, fig.asp=.3}
+\fontsize{9pt}{7.2}\selectfont
+
+Az ébredéstől eltelt órákat is feljegyztem, ezek azonban nem tűntek relevánsnak. A megfigyeléseket első körben (*thin plate regresson*) GAM-modellel vizsgáltam, az ébren töltött órákat pedig a továbbiakban elhanyagolom.
+
+
+$$
+\begin{split}
+M\acute ert\:t\ddot omeg=\beta_0+
+\beta_1\cdot s(Koplal\acute assal\:t\ddot olt\ddot ott\:id\hat o)
++\beta_2\cdot s(Eltelt\:napok\:sz\acute ama)\\
++\beta_3\cdot s(\acute Etkez\acute es\:ut\acute an\:m\acute ert\:t\ddot omeg)
++\beta_4\cdot s(\acute Ebren\:t\ddot olt\ddot ott\:\acute or\acute ak\:sz\acute ama) + \epsilon
+\end{split}
+$$
+
+ahol
+
+$$s(x) = \sum_{i=1}^{K}\omega _i\varphi (\left \| x-c_i \right \|)$$
+és
+
+$$\varphi(r)=r^2log(r)$$
+
+## Ébren töltött órák száma
+
+Az ébren töltött órák száma nem tűnik fontos változónak, a továbbiakban elhanyagoljuk.  
+
+```{r, fig.asp=.6}
 
 mod_gam <- gam(Mass ~ s(time, bs = "ts") + 
                       s(truedate, bs = "ts") + 
@@ -633,14 +662,41 @@ par(mfcol=c(1,1))
 
 ## (Kevert-) Modellezés splineokkal, a koplalás hatására
 
-\fontsize{8pt}{7.2}\selectfont
-\vspace{.1in}
+\fontsize{7pt}{7.2}\selectfont
 
-Kevert modelleket vizsgáltam, ahol *\textcolor{blue}{korrellálatlan random slope/intercepttel}* jellemeztem a koplalás hatását.  
-AIC és BIC alapján néztem a prediktorok bevonhatóságát természetes splineokkal.  
-Egy másodfokú spline-nal érdemes bevonni a koplalás idejét, és egyszerű baseline-korrekcióval az utolsó étkezéskor mért tömeget.  
+Kevert modelleket vizsgáltam, ahol *\textcolor{blue}{korrellálatlan random slope/intercepttel}* jellemeztem a koplalás hatását. Egy-egy koplalási 'epizód' hatását random hatásként vizsgáltam (*i*).
 
-```{r, fig.asp=.28, message = FALSE}
+$$
+\begin{split}
+M\acute ert\:t\ddot omeg_i =\beta_0 + \alpha_i + 
+\sum_{k=1}^{d_1}\beta_{1k}\cdot B_k(Koplal\acute assal\:t\ddot olt\ddot ott\:id\hat o , q_d) \\
++ \sum_{k=1}^{d_1}\beta_{1k_i}\cdot B_k(Koplal\acute assal\:t\ddot olt\ddot ott\:id\hat o_i , q_d) \\
++\sum_{k=1}^{d_2}\beta_{2k}\cdot B_k(\acute Etkez\acute es\:ut\acute an\:m\acute ert\:t\ddot omeg, q_d) \\ 
++\sum_{k=1}^{d_3}\beta_{3k}\cdot B_k(Eltelt\:napok\:sz\acute ama, q_d)+\epsilon_i
+\end{split}
+$$
+$$
+\alpha_i \in \textsl{N}(0,\sigma_{episode}^2),\: \epsilon_{i} \in \textsl{N}(0,\sigma^2 {I_n}_{_i})
+$$
+
+$$
+B_1(x)=x;\:B_{2..l}(x,q)=\frac{(q-\frac{1}{2})^{2}-\frac{1}{12}}{4}-\frac{(abs(x-q)-\frac{1}{2})^{4})-\frac{(abs(x-q)-\frac{1}{2})^{2}}{2}+\frac{7}{240}}{24}
+$$
+
+
+
+##
+
+\fontsize{9pt}{7.2}\selectfont
+
+AIC és BIC alapján néztem a prediktorok bevonhatóságát természetes splineokkal (a $q_d$-k kvantilisek alapján lettek meghatározva).
+
+
+
+Egy másodfokú ($d_1$=2) spline-nal érdemes bevonni a koplalás idejét, és egyszerű baseline-korrekcióval ($d_2$=1) az utolsó étkezéskor mért tömeget.  
+
+
+```{r, fig.asp=.35, message = FALSE}
 library(splines)
 library(car)
 
@@ -812,8 +868,8 @@ ggplot( fast_sleep_cor, aes( x = time,
 \fontsize{8pt}{7.2}\selectfont
 \vspace{.1in}
 
-A **\textcolor{red}{random hatásokra feltételes}**, bootstrap alapján becsült predikciós intervallum bizonytalansága igen kicsi.  
-Ez a megközelítés a *\textcolor{blue}{koplalás ~ testtömeg}* modellezésére igen jó *(R^2 analóg mérték: `r paste(round(MuMIn::r.squaredGLMM(mod_lmer)[1,1],2))`; `r paste(round(MuMIn::r.squaredGLMM(mod_lmer)[1,2],2))` a random hatásokra kondicionálva)*, de *a napról-napra történő változás figyelembevételére nem*.  
+A **\textcolor{red}{random hatásokra feltételes}** (tehát az étkezés utáni tömeg pontosan ismert!), bootstrap alapján becsült predikciós intervallum bizonytalansága igen kicsi.  
+Ez a megközelítés a *\textcolor{blue}{koplalás - testtömeg}* modellezésére igen jó *(R^2 analóg mérték: `r paste(round(MuMIn::r.squaredGLMM(mod_lmer)[1,1],2))`; `r paste(round(MuMIn::r.squaredGLMM(mod_lmer)[1,2],2))` a random hatásokra kondicionálva)*, de *a napról-napra történő változás figyelembevételére nem*.  
 
 ```{r, fig.show="hold", out.width="45%",fig.align='center', message = FALSE}
 
@@ -849,13 +905,35 @@ predictorEffects(mod_lmer,residuals=TRUE,confint=list(compute=FALSE)) %>%
 
 ## Tömeg modellezése ('baseline' nélkül)
 
-\fontsize{9pt}{7.2}\selectfont
-\vspace{.1in}
+\fontsize{8pt}{7.2}\selectfont
 
-A koplalási idő bevétele *df=2*, a dátum bevétele a modellbe BIC alapján egy *df=3* spline-nal ajánlott.  
+Az előzők a koplalás hatását specifikusan vizsgálják, hiszem - a baseline korrekció miatt - a tömegváltozást vizsgálják az étkezések után. Ennek kihagyása esetén ténylegesen a testtömeg változását nézhetjük az idő függvényében a következők szerint:
+
+
+$$
+\begin{split}
+M\acute ert\:t\ddot omeg_i =\beta_0 +\alpha_i + 
+\sum_{k=1}^{d_1}\beta_{1k}\cdot B_k(Koplal\acute assal\:t\ddot olt\ddot ott\:id\hat o , q_d) \\
++ \sum_{k=1}^{d_1}\beta_{1k_i}\cdot B_k(Koplal\acute assal\:t\ddot olt\ddot ott\:id\hat o_i , q_d) \\
++\sum_{k=1}^{d_2}\beta_{2k}\cdot B_k(Eltelt\:napok\:sz\acute ama, q_d)+\epsilon_i
+\end{split}
+$$
+$$
+\alpha_i \in \textsl{N}(0,\sigma_{episode}^2),\: \epsilon_{i} \in \textsl{N}(0,\Sigma_i)
+$$
+
+$$
+B_1(x)=x;\:B_{2..l}(x,q)=\frac{(q-\frac{1}{2})^{2}-\frac{1}{12}}{4}-\frac{(abs(x-q)-\frac{1}{2})^{4})-\frac{(abs(x-q)-\frac{1}{2})^{2}}{2}+\frac{7}{240}}{24}
+$$
+
+
+
+BIC alapján $d_1$ = 2, $d_2$ = 3 ajánlott.  
 *(Az AIC df=5-ös ajánlása esetén konvergencia problémák jelentkeztek, magasabb df alkalmazása esetén a VIF is nő.)*
 
-```{r, fig.asp=.3, message = FALSE}
+##
+
+```{r, fig.asp=.4, message = FALSE}
 library(splines)
 
 Spline_BIC <- expand.grid( 
