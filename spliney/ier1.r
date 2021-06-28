@@ -4,7 +4,7 @@ library(effects)
 library(nlme)
 library(ggplot2)
 
-setwd("~/R/Projects/Martysweight/spliney")
+#setwd("~/R/Projects/Martysweight/spliney")
 
 dat <- read_excel("martysweight.xlsx", 
                   col_types = c("date", "numeric", "numeric", 
@@ -26,7 +26,7 @@ knot <- c()
 dayswithdp <- 0
 days <- floor( dat$numd)
 for (i in 1:max(floor(dat$numd))) {
-  if(dayswithdp>1) {
+  if(dayswithdp>2) {
     knot <- c(knot,i)
     dayswithdp <- 0
   }
@@ -43,7 +43,11 @@ plot(predictorEffects(mod, residuals = TRUE))
 
 
 mod <- lme( Mass ~ ns( fastd, df = 2) 
-            + ns(numd, knots=c(4,7,38,41,44,47,53,56,59,62,65)), #!!! 
+            + ns(numd, 
+                 knots=c(
+                   4,  7, 38, 41, 44, 47, 53, 
+                   56, 59, 62, 65, 68, 71, 74
+                         )), #!!! 
             random = ~1|Episode,
             correlation = corAR1( ),
             control =  lmeControl(maxIter = 1000,msMaxIter = 3000,
@@ -86,7 +90,7 @@ anova(mod)
 # dat_p$Episode <- 14
 
 dat_p <- expand.grid( fastd = c(0,8,16,24),
-                      numd = c(seq(1,10,.1),seq(35,67,.1)),
+                      numd = c(seq(1,10,.1),seq(35,80,.1)),
                       Episode = 14)
 dat_p$pred <- predict(mod, newdata = dat_p)
 
