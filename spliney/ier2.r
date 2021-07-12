@@ -10,7 +10,7 @@ library(MuMIn)
 
 #####
 
-k <- 3
+k <- 1
 #####
 dat <- read_excel("martysweight.xlsx", 
                   col_types = c("date", "numeric", "numeric", 
@@ -88,8 +88,8 @@ plot(predictorEffects(mod,
 
 
 mod <- lme( expre,
-            random = ~0+fastd|Episode,
-            #random = ~1|Episode,
+            #random = ~0+fastd|Episode,
+            random = ~1|Episode,
             correlation = corAR1( form = ~1|Episode),
             control =  lmeControl(maxIter = 2000,
                                   msMaxIter = 3000,
@@ -99,8 +99,8 @@ mod <- lme( expre,
                                   msTol = 1e-6),
             data = dat)
 
- plot(ranef(mod))
-# hist(ranef(mod)[,1])
+plot(ranef(mod))
+hist(ranef(mod)[,1])
 #hist(ranef(mod)[,2])
 intervals(mod)
 
@@ -164,7 +164,7 @@ dat_p %>%
   scale_y_continuous(limits = c(80,87)) +
   geom_vline(xintercept = knot) +
   scale_x_date(date_breaks = "1 week",
-               date_minor_breaks = "1 week", 
+               date_minor_breaks = "1 day", 
                date_labels = "%m-%d",
                limits = c(max(dat_p$numd)-28, max(dat_p$numd))) + 
   labs( x = "Date",
@@ -176,27 +176,30 @@ dat_p %>%
 #   group_by(Episode) %>%
 #     summarise(minlast = max(fastd))
 
+wind <- 0.01#.5
+ste  <- 0.01
+
 dat_d <-  expand.grid( fastd = c(8),
-                       numd = c(seq(1,10,.1),seq(35,max(dat$numd),.1)),
+                       numd = c(seq(1,10,ste),seq(35,max(dat$numd),ste)),
                        Episode = 14
                        )
 dat_d$pred <- predict(mod, newdata = dat_d)
 
-wind <- 1.8
+
 
 dat_d$dif <- 0
 dat_d$maxinlast <- 0
 dat_d$mininlast <- 0
 for ( i in 2:nrow(dat_d)) {
   #dat_d$dif[i] <- (dat_d$pred[i] - dat_d$pred[i-1]) / (as.numeric(dat_p$numd[i]) - as.numeric(dat_p$numd[i-1]))
-  dat_d$dif[i] <- (dat_d$pred[i] - dat_d$pred[i-1]) / .1
-  dat_d$maxinlast[i] <- max(dat$fastd[dat$numd > dat_d$numd[i] - wind &
+  dat_d$dif[i] <- (dat_d$pred[i] - dat_d$pred[i-1]) / ste
+  dat_d$maxinlast[i] <- max(dat$fastd[dat$numd >= dat_d$numd[i] - wind &
                                         dat$numd <= dat_d$numd[i]])
-  dat_d$mininlast[i] <- min(dat$fastd[dat$numd > dat_d$numd[i] - wind &
+  dat_d$mininlast[i] <- min(dat$fastd[dat$numd >= dat_d$numd[i] - wind &
                                         dat$numd <= dat_d$numd[i]])
   
 }
-dat_d$dif[dat_d$dif > .25] <- 0
+dat_d$dif[dat_d$dif > 4] <- 0
 dat_d$maxinlast[dat_d$maxinlast==-Inf] <- NA
 dat_d$maxinlast[dat_d$maxinlast==0] <- NA
 dat_d$mininlast[dat_d$mininlast==Inf] <- NA
@@ -223,13 +226,15 @@ cor( dat_d$dif,
      use = "complete.obs")
 
 corrv <- c()
-for (i in 0:500) {
-  dat_d$dif2 <- 0
+for (i in 0:300) {
+  dat_d$dif2 <- NA
   dat_d$dif2[1:(nrow(dat_d)-i)] <- dat_d$dif[(i+1):nrow(dat_d)]
   dat_d$dif2[dat_d$dif2==0] <- NA
   corrv <-  c(corrv,
-               cor(dat_d$dif2, dat_d$maxinlast,
-                 use="complete.obs"))
+               cor(dat_d$dif2, 
+                   dat_d$maxinlast,
+                 use="complete.obs",
+                 method="kendall"))
 }
 plot(corrv)
 max(corrv)
@@ -239,20 +244,27 @@ which( corrv == min(corrv))
 
 #####
 
-i <- 24
+i <- 100
 dat_d$dif2 <- 0
 dat_d$dif2[1:(nrow(dat_d)-i)] <- dat_d$dif[(i+1):nrow(dat_d)]
 plot(dat_d$maxinlast,dat_d$dif2)
 
 modch <- lm(dif2 ~ ns(maxinlast, 
-                      df = 2),
+                      df = 3),
             dat_d[complete.cases(dat_d),])
 predict(modch,newdata = data.frame(maxinlast = 0:28))
 
+#plot(modch)
+modch %>%
+  effects::predictorEffects( residuals=TRUE) %>%
+  plot()
+
+summary(modch)
+
 modch <- gls(dif2 ~ ns(maxinlast, 
-                       df = 3),
-             correlation = corAR1(),
-             #weights = varExp(),
+                       df = 2),
+             #correlation = corAR1(),
+             weights = varExp(),
              dat_d[complete.cases(dat_d),],
              control = lmeControl(maxIter = 200,
                                   msMaxIter = 300,
