@@ -7,6 +7,7 @@ library(dplyr)
 library(MuMIn)
 
 #setwd("~/R/Projects/Martysweight/spliney")
+setwd("~/V2 Docs/R Git/Martysweight/spliney")
 
 #####
 
@@ -88,8 +89,8 @@ plot(predictorEffects(mod,
 
 
 mod <- lme( expre,
-            #random = ~0+fastd|Episode,
-            random = ~1|Episode,
+            random = ~0+fastd|Episode,
+            #random = ~1|Episode,
             correlation = corAR1( form = ~1|Episode),
             control =  lmeControl(maxIter = 2000,
                                   msMaxIter = 3000,
@@ -144,7 +145,23 @@ dat_p$pred <- predict(mod, newdata = dat_p)
 dat_p$numd <- as.Date( dat_p$numd, origin = "2021-04-11")
 dat$Date2  <- as.Date( dat$numd,   origin = "2021-04-11")
 
-ggplot(dat_p, aes(x=numd, y = pred, group = fastd, color = fastd)) +
+ggplot(dat_p[dat_p$fastd==8,], 
+       aes(x=numd, y = pred, group = fastd, color = fastd)) +
+  theme_bw() +
+  geom_line(size=.9) +
+  stat_summary(data = dat, 
+               aes(x = Date2, y = Mass, group = Episode),
+               fun=mean, geom="line", colour="blue") +
+  geom_point(data = dat, aes(x = Date2, y = Mass, color=fastd, group = Episode), size = 1) +
+  #geom_line(data = dat, aes(x = Date2, y = Mass, group = Episode), size = .5, color = "grey50") +
+  scale_y_continuous(limits = c(80,87)) +
+  geom_vline(xintercept = knot) +
+  scale_x_date(date_breaks = "1 week",date_minor_breaks = "1 week", date_labels = "%m-%d") + 
+  labs( x = "Date",
+        y = "Mass")
+
+
+pic <- ggplot(dat_p, aes(x=numd, y = pred, group = fastd, color = fastd)) +
   theme_bw() +
   geom_line(size=.9) +
   geom_point(data = dat, aes(x = Date2, y = Mass, color=fastd, group = Episode), size = 1) +
@@ -155,20 +172,14 @@ ggplot(dat_p, aes(x=numd, y = pred, group = fastd, color = fastd)) +
   labs( x = "Date",
         y = "Mass")
 
-dat_p %>%
- ggplot(., aes(x=numd, y = pred, group = fastd, color = fastd)) +
-  theme_bw() +
-  geom_line(size=.9) +
-  geom_point(data = dat, aes(x = Date2, y = Mass, color=fastd, group = Episode), size = 1) +
-  geom_line(data = dat, aes(x = Date2, y = Mass, group = Episode), size = .5, color = "grey50") +
-  scale_y_continuous(limits = c(80,87)) +
-  geom_vline(xintercept = knot) +
+pic2 <- pic +
   scale_x_date(date_breaks = "1 week",
                date_minor_breaks = "1 day", 
                date_labels = "%m-%d",
-               limits = c(max(dat_p$numd)-28, max(dat_p$numd))) + 
-  labs( x = "Date",
-        y = "Mass")
+               limits = c(max(dat_p$numd)-28, max(dat_p$numd)))
+
+pic
+pic2
 
 ######
 
@@ -226,7 +237,7 @@ cor( dat_d$dif,
      use = "complete.obs")
 
 corrv <- c()
-for (i in 0:300) {
+for (i in 0:100) {
   dat_d$dif2 <- NA
   dat_d$dif2[1:(nrow(dat_d)-i)] <- dat_d$dif[(i+1):nrow(dat_d)]
   dat_d$dif2[dat_d$dif2==0] <- NA
@@ -244,7 +255,7 @@ which( corrv == min(corrv))
 
 #####
 
-i <- 100
+i <- 6
 dat_d$dif2 <- 0
 dat_d$dif2[1:(nrow(dat_d)-i)] <- dat_d$dif[(i+1):nrow(dat_d)]
 plot(dat_d$maxinlast,dat_d$dif2)
