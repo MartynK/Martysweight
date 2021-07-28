@@ -63,6 +63,7 @@ mod <- gls( expre,
             #random = ~0+fastd|Episode,
             #random = ~1|Episode,
             correlation = corAR1( form = ~1|Episode),
+            weights = varExp(),
             control =  lmeControl(maxIter = 2000,
                                   msMaxIter = 3000,
                                   niterEM = 400,
@@ -74,9 +75,6 @@ mod <- gls( expre,
 
 summary(mod)
 car::vif(mod)
-plot(predictorEffects(mod, 
-                      residuals = TRUE),
-     ylim = c(78,86))
 
 # cooks <- predictmeans::CookD(mod,
 #               newwd = FALSE)
@@ -88,25 +86,24 @@ plot(predictorEffects(mod,
 #dat  <- dat[ cooks < q, ] # removing outliers
 
 
-mod <- lme( expre,
-            random = ~0+fastd|Episode,
-            #random = ~1|Episode,
-            correlation = corAR1( form = ~1|Episode),
-            control =  lmeControl(maxIter = 2000,
-                                  msMaxIter = 3000,
-                                  niterEM = 400,
-                                  msVerbose = TRUE,
-                                  tolerance = 1e-6,
-                                  msTol = 1e-6),
-            data = dat)
+# mod <- lme( expre,
+#             random = ~0+fastd|Episode,
+#             #random = ~1|Episode,
+#             correlation = corAR1( form = ~1|Episode),
+#             control =  lmeControl(maxIter = 2000,
+#                                   msMaxIter = 3000,
+#                                   niterEM = 400,
+#                                   msVerbose = TRUE,
+#                                   tolerance = 1e-6,
+#                                   msTol = 1e-6),
+#             data = dat)
 
-plot(ranef(mod))
-hist(ranef(mod)[,1])
+# plot(ranef(mod))
+# hist(ranef(mod)[,1])
 #hist(ranef(mod)[,2])
 intervals(mod)
 
 summary(mod)
-plot(predictorEffects(mod, residuals = TRUE))
 plot(mod)
 ggpubr::ggqqplot(residuals(mod))
 
@@ -135,6 +132,10 @@ anova(mod)
 # dat_p$fastd <- 8
 # dat_p$pred <- predict(mod, newdata = dat_p)
 # dat_p$Episode <- 14
+
+plot(predictorEffects(mod, 
+                      residuals = TRUE),
+     ylim = c(79.5,86))
 
 dat_p <- expand.grid( fastd = c(0,8,16,24),
                       numd = c(seq(1,10,.1),seq(35,max(dat$numd)+1,.1)),
@@ -178,7 +179,7 @@ pic2 <- pic +
                date_labels = "%m-%d",
                limits = c(max(dat_p$numd)-28, max(dat_p$numd)))
 
-pic
+#pic
 pic2
 
 ######
@@ -190,12 +191,10 @@ pic2
 wind <- 0.01#.5
 ste  <- 0.01
 
-dat_d <-  expand.grid( fastd = c(8),
-                       numd = c(seq(1,10,ste),seq(35,max(dat$numd),ste)),
-                       Episode = 14
-                       )
+dat_d <-   expand.grid( fastd = c(0,8),
+                        numd = c(seq(1,10,.01),seq(35,max(dat$numd),.01)))
 dat_d$pred <- predict(mod, newdata = dat_d)
-
+dat_d      <- dat_d[dat_d$fastd==8,]
 
 
 dat_d$dif <- 0
@@ -237,7 +236,7 @@ cor( dat_d$dif,
      use = "complete.obs")
 
 corrv <- c()
-for (i in 0:100) {
+for (i in 0:300) {
   dat_d$dif2 <- NA
   dat_d$dif2[1:(nrow(dat_d)-i)] <- dat_d$dif[(i+1):nrow(dat_d)]
   dat_d$dif2[dat_d$dif2==0] <- NA
@@ -255,7 +254,7 @@ which( corrv == min(corrv))
 
 #####
 
-i <- 6
+i <- 30
 dat_d$dif2 <- 0
 dat_d$dif2[1:(nrow(dat_d)-i)] <- dat_d$dif[(i+1):nrow(dat_d)]
 plot(dat_d$maxinlast,dat_d$dif2)
@@ -263,18 +262,23 @@ plot(dat_d$maxinlast,dat_d$dif2)
 modch <- lm(dif2 ~ ns(maxinlast, 
                       df = 3),
             dat_d[complete.cases(dat_d),])
-predict(modch,newdata = data.frame(maxinlast = 0:28))
 
-#plot(modch)
-modch %>%
-  effects::predictorEffects( residuals=TRUE) %>%
-  plot()
-
+plot(modch,1)
 summary(modch)
 
+pr <- modch %>%
+  effects::predictorEffects( residuals=TRUE) %>%
+    plot()
+pr
+
+prtxt <- predict(modch,newdata = data.frame(maxinlast = seq(0,32,2)))
+names(prtxt) <- seq(0,32,2)
+prtxt
+
+
 modch <- gls(dif2 ~ ns(maxinlast, 
-                       df = 2),
-             #correlation = corAR1(),
+                       df = 4),
+             #correlation = corAR1(form = ~1|Episode),
              weights = varExp(),
              dat_d[complete.cases(dat_d),],
              control = lmeControl(maxIter = 200,
@@ -282,7 +286,7 @@ modch <- gls(dif2 ~ ns(maxinlast,
                                   niterEM = 10,
                                   msVerbose = FALSE,
                                   tolerance = 1e-6,
-                                  msTol = 1e-6))
+                                msTol = 1e-6))
 
 
 plot(modch)
@@ -296,4 +300,10 @@ anova(modch)
 modch %>%
   predictorEffects(residuals=TRUE) %>%
     plot()
+
+prtxt <- predict(modch,newdata = data.frame(maxinlast = seq(0,32,2)))
+names(prtxt) <- seq(0,32,2)
+prtxt
+
+
 
