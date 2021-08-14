@@ -11,7 +11,7 @@ setwd("~/V2 Docs/R Git/Martysweight/spliney")
 
 #####
 
-k <- 1
+k <- 2
 #####
 dat <- read_excel("martysweight.xlsx", 
                   col_types = c("date", "numeric", "numeric", 
