@@ -1,7 +1,7 @@
 library(readr)
 library(splines)
 library(effects)
-studtab2 <- read_delim("~/V2 Docs/Bistat képzés/Misc/fasting/studtab2.csv", 
+studtab2 <- read_delim(here::here("inst", "extdata", "studtab2.csv"), 
                        ";", escape_double = FALSE, trim_ws = TRUE)
 studtab2$sex <- as.factor(studtab2$sex)
 #View(studtab2)
