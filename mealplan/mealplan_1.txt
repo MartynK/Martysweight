@@ -1,0 +1,29 @@
+ID;Day;Day_of_the_week;Type;Name_of_meal;Calorie_content;Added_sugar
+1;1;Monday;Meal_1;Savory Oat Bran Porridge with 250g yogurt;550;0
+2;1;Monday;Meal_2;Lentil soup and quinoa salad;700;5
+3;1;Monday;Snack;Apple and a handful of almonds;300;0
+4;1;Monday;Rescue;Baby carrots and hummus;200;0
+5;2;Tuesday;Meal_1;Vegetable omelette, whole grain toast, and 250g yogurt;750;5
+6;2;Tuesday;Meal_2;Baked salmon, steamed broccoli, and brown rice;750;0
+7;2;Tuesday;Snack;Boiled egg;75;0
+8;2;Tuesday;Rescue;Celery sticks with peanut butter;200;2
+9;3;Wednesday;Meal_1;Savory Oat Bran Porridge with 250g yogurt;550;0
+10;3;Wednesday;Meal_2;Turkey and avocado wrap with a mixed greens salad;700;5
+11;3;Wednesday;Snack;Rice cakes with almond butter;300;2
+12;3;Wednesday;Rescue;Cherry tomatoes and mozzarella cheese;200;0
+13;4;Thursday;Meal_1;Shakshuka, whole grain toast, and 250g yogurt;750;5
+14;4;Thursday;Meal_2;Grilled shrimp with quinoa and roasted vegetables;750;5
+15;4;Thursday;Snack;Greek yogurt with honey and walnuts;300;10
+16;4;Thursday;Rescue;Sliced cucumber and tzatziki sauce;200;2
+17;5;Friday;Meal_1;Avocado toast with smoked salmon, and 250g yogurt;800;5
+18;5;Friday;Meal_2;Chicken and vegetable stir-fry with brown rice;700;5
+19;5;Friday;Snack;Dark chocolate and mixed nuts;300;10
+20;5;Friday;Rescue;Sliced bell peppers with guacamole;200;0
+21;6;Saturday;Meal_1;Savory Oat Bran Porridge with 250g yogurt;550;0
+22;6;Saturday;Meal_2;Beef fajita bowl with brown rice, black beans, and veggies;700;5
+23;6;Saturday;Snack;Boiled egg;75;0
+24;6;Saturday;Rescue;Sliced apple with cheese;200;0
+25;7;Sunday;Meal_1;Spinach, mushroom, and feta omelette with 250g yogurt;750;5
+26;7;Sunday;Meal_2;Grilled chicken Caesar salad with whole grain croutons;750;5
+27;7;Sunday;Snack;Rice cakes with hummus and cherry tomatoes;300;2
+28;7;Sunday;Rescue;Roasted chickpeas;200;0
