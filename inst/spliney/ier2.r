@@ -5,6 +5,7 @@ library(nlme)
 library(ggplot2)
 library(dplyr)
 library(MuMIn)
+library(lubridate)
 
 setwd(here::here())
 #setwd("~/V2 Docs/R Git/Martysweight/spliney")
@@ -13,19 +14,52 @@ setwd(here::here())
 
 k <- 2
 #####
-dat <- read_excel("spliney/martysweight.xlsx", 
-                  col_types = c("date", "numeric", "numeric", 
+dat <- here::here("inst","extdata","martysweight.xlsx") %>%
+   read_excel( col_types = c("date", "numeric", "numeric", 
                                 "numeric", "numeric", "numeric","numeric")) %>%
   #arrange(., numd) %>%
-  mutate( Episode = as.factor(Episode),
+  mutate( #Episode = as.factor(Episode),
              numd = as.numeric( Date 
                         + Time_hours * 3600 
                         + Time_minutes * 60
-                        - min(dat$Date)) / 24,
+                        - min(Date)) / 24,
             fastd = Time_fasted_hours + Time_fasted_minutes / 60,
           fastd_truncated = ifelse( fastd > 16, 16, fastd),
         maxinlast = 0
   ) 
+
+##########
+# Episodes setup
+
+# Assuming 'dat' is your data frame
+dat <- dat %>%
+  mutate(
+    # Convert 'Time_fasted' to minutes
+    Time_fasted_total_minutes = Time_fasted_hours * 60 + Time_fasted_minutes,
+    
+    # Calculate the time difference between consecutive observations in minutes
+    Time_diff = c(NA, diff(as.numeric(Date)) * 24 * 60 + diff(Time_hours) * 60 + diff(Time_minutes))
+  )
+
+# Initialize the first episode
+dat$Episode[1] <- 1
+
+# Loop through the rows to assign episodes
+for(i in 2:nrow(dat)) {
+  if(!is.na(dat$Time_diff[i]) && dat$Time_diff[i] <= dat$Time_fasted_total_minutes[i] + 30) {
+    dat$Episode[i] <- dat$Episode[i-1]
+  } else {
+    dat$Episode[i] <- as.numeric(dat$Episode[i-1]) + 1
+  }
+}
+
+# Convert 'Episode' back to factor if needed
+dat$Episode <- as.factor(dat$Episode)
+
+
+
+#########
+
 
 dat_0mass <- dat %>%
                group_by( Episode) %>%
@@ -169,7 +203,7 @@ expre <- paste(knot,collapse=",") %>%
 
 
 mod <- lme( expre,
-            random = ~0 + fastd_truncated|Episode,
+            random = ~ 0 + fastd_truncated|Episode,
             weights = varPower(),
             #correlation = corAR1( form = ~1|Episode, value = .13),
             control =  lmeControl(maxIter = 2000,
