@@ -12,13 +12,17 @@ setwd(here::here())
 
 #####
 
-k <- 2
+k <- 20
 #####
 dat <- here::here("inst","extdata","martysweight.xlsx") %>%
    read_excel( col_types = c("date", "numeric", "numeric", 
                                 "numeric", "numeric", "numeric","numeric")) %>%
-  #arrange(., numd) %>%
-  mutate( #Episode = as.factor(Episode),
+  mutate( Time_hours = ifelse( is.na(Time_hours)== TRUE, 12, Time_hours),
+          Time_minutes = ifelse( is.na(Time_minutes)== TRUE, 0, Time_minutes),
+          Time_fasted_hours = ifelse( is.na(Time_fasted_hours)== TRUE, 
+                                      4, Time_fasted_hours),
+          Time_fasted_minutes = ifelse( is.na(Time_fasted_minutes)== TRUE, 
+                                        0, Time_fasted_minutes),
              numd = as.numeric( Date 
                         + Time_hours * 3600 
                         + Time_minutes * 60
@@ -26,7 +30,8 @@ dat <- here::here("inst","extdata","martysweight.xlsx") %>%
             fastd = Time_fasted_hours + Time_fasted_minutes / 60,
           fastd_truncated = ifelse( fastd > 16, 16, fastd),
         maxinlast = 0
-  ) 
+  )   %>%
+  arrange(., numd)
 
 ##########
 # Episodes setup
@@ -34,23 +39,26 @@ dat <- here::here("inst","extdata","martysweight.xlsx") %>%
 # Assuming 'dat' is your data frame
 dat <- dat %>%
   mutate(
-    # Convert 'Time_fasted' to minutes
-    Time_fasted_total_minutes = Time_fasted_hours * 60 + Time_fasted_minutes,
-    
-    # Calculate the time difference between consecutive observations in minutes
-    Time_diff = c(NA, diff(as.numeric(Date)) * 24 * 60 + diff(Time_hours) * 60 + diff(Time_minutes))
+    fast_start =  round((numd - fastd /24)*7
+    , digits = 1)/7,
+    fast_diff =  fast_start - lag(fast_start)
+      
   )
 
+diffs <- dat$fast_diff
+hist( diffs[diffs != 0 & diffs < 5], breaks = 50)
+
+
 # Initialize the first episode
+act_episode    <- 1
 dat$Episode[1] <- 1
 
 # Loop through the rows to assign episodes
 for(i in 2:nrow(dat)) {
-  if(!is.na(dat$Time_diff[i]) && dat$Time_diff[i] <= dat$Time_fasted_total_minutes[i] + 30) {
-    dat$Episode[i] <- dat$Episode[i-1]
-  } else {
-    dat$Episode[i] <- as.numeric(dat$Episode[i-1]) + 1
+  if ( dat$fast_diff[i] > 0.5) {
+    act_episode <- act_episode + 1
   }
+  dat$Episode[i] <- act_episode
 }
 
 # Convert 'Episode' back to factor if needed
@@ -154,7 +162,7 @@ modch4 <- lme( mass_change ~ fastd,
 
 anova(modch3, modch4) # second model better(?) - but harder to interpret
 
-
+##########
 
 
 knot <- c()
@@ -162,7 +170,10 @@ dayswithdp <- 0
 days <- floor( dat$numd)
 for (i in seq(1,max(floor(dat$numd)))) {
   if(dayswithdp>=k) {
-    knot <- c(knot,i)
+    knot_act <- (  dat$numd[ which(days == i)] 
+                 + dat$numd[ which(days == i)-1]
+                 ) / 2 # Gives singularities
+    knot <- c(knot,i)# knot_act would have gone here
     dayswithdp <- 0
   }
   dayswithdp <- ifelse(i %in% days, dayswithdp+1, dayswithdp)
@@ -223,7 +234,7 @@ intervals(mod)
 
 plot(predictorEffects(mod, 
                       residuals = TRUE),
-     ylim = c(79.5,86))
+     ylim = c(50,100))
 
 
 #summary(mod)
@@ -263,8 +274,8 @@ dat_p <- expand.grid( fastd = c(0,8,16,24),
                       mutate( fastd_truncated = fastd)
 dat_p$pred <- predict(mod, newdata = dat_p)
 
-dat_p$numd <- as.Date( dat_p$numd, origin = "2021-04-11")
-dat$Date2  <- as.Date( dat$numd,   origin = "2021-04-11")
+dat_p$numd <- as.Date( dat_p$numd, origin = min(dat$Date))
+dat$Date2  <- as.Date( dat$numd,   origin = min(dat$Date))
 
 ggplot(dat_p[dat_p$fastd==8,], 
        aes(x=numd, y = pred, group = fastd, color = fastd)) +
@@ -275,9 +286,10 @@ ggplot(dat_p[dat_p$fastd==8,],
                fun=mean, geom="line", colour="blue") +
   geom_point(data = dat, aes(x = Date2, y = Mass, color=fastd, group = Episode), size = 1) +
   #geom_line(data = dat, aes(x = Date2, y = Mass, group = Episode), size = .5, color = "grey50") +
-  scale_y_continuous(limits = c(80,87)) +
-  geom_vline(xintercept = knot) +
-  scale_x_date(date_breaks = "1 month",date_minor_breaks = "2 week", date_labels = "%m-%d") + 
+  scale_y_continuous(limits = c(60,89)) +
+  geom_vline(xintercept = days(knot) + min(dat$Date2), alpha = .5, 
+             color = "grey50", linetype = "dashed") +
+  scale_x_date(date_breaks = "2 years",date_minor_breaks = "1 year", date_labels = "%y") + 
   labs( x = "Date",
         y = "Mass")
 
