@@ -1,11 +1,11 @@
 library(readr)
 library(splines)
+library(nlme)
 library(effects)
-studtab2 <- read_delim(here::here("inst", "extdata", "studtab2.csv"), 
+
+studtab2 <- readr::read_delim(here::here("inst", "extdata", "studtab2.csv"), 
                        ";", escape_double = FALSE, trim_ws = TRUE)
 studtab2$sex <- as.factor(studtab2$sex)
-#View(studtab2)
-
 
 mod <- lm(wpost ~ (wpr + length) * sex, studtab2)
 summary(mod)
@@ -19,13 +19,23 @@ studtab2[1371,]
 #obviously wrong
 studtab2 <- studtab2[-1371,]
 mod2 <- lm(wpost ~ wpr + length * sex, studtab2)
-anova(mod,mod2)
+mod1_refit <- update(mod,data=studtab2)
+anova(mod1_refit,mod2)
 summary(mod2)
-plot(mod2)
-plot(predictorEffects(mod2))
+plot(mod2,3)
+
+mod3 <- gls(wpost ~ wpr + length * sex, 
+            data = studtab2,
+            weights = varPower(form = ~ length),
+            na.action = na.omit)
+
+plot(predictorEffects(mod3))
 
 pr <- expand.grid( sex = "M",
-                   length = c(1,2,3,4),
-                   wpr = 77.8)
+                   length = 1:10,
+                   wpr = 86)
 
-predict(mod2,newdata=pr,se.fit=TRUE)
+pr$pr <- predict(mod2,newdata=pr,se.fit=TRUE)$fit
+pr$se <- predict(mod2,newdata=pr,se.fit=TRUE)$se.fit
+
+

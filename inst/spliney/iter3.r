@@ -12,7 +12,7 @@ setwd(here::here())
 
 #####
 
-k <- 20
+k <- 15
 #####
 dat <- here::here("inst","extdata","martysweight.xlsx") %>%
   read_excel( col_types = c("date", "numeric", "numeric", 

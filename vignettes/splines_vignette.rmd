@@ -15,7 +15,7 @@ I have an excel file with all of my (known) recorded weights including te ones I
 
 I'm using natural splines with a set method for determining knot placements; I'm setting a knot after 'n' days of valid observations.
 
-Next steps are to determine the 'best' value for 'n'. 
+Next steps are to determine the 'best' value for 'n'. I plan to use a rolling forecast but not with mixed models due to computatonal complexity.
 
 I'm also not sure whether mixed modelling is the best approach here.
 
@@ -35,8 +35,10 @@ setwd(here::here())
 
 #####
 
-k <- 20
-#####
+k <- 15 # optim. by rolling forecasts
+
+#######
+
 dat <- here::here("inst","extdata","martysweight.xlsx") %>%
   readxl::read_excel( col_types = c("date", "numeric", "numeric", 
                             "numeric", "numeric", "numeric","numeric")) %>%
@@ -110,7 +112,8 @@ expre <- paste(knot,collapse=",") %>%
   as.formula(.)
 
 mod <- lme( expre,
-            random = ~ 0 + fastd_truncated|Episode,
+            #random = ~ 0 + fastd_truncated|Episode,
+            random = ~ 1|Episode,
             weights = varPower(),
             #correlation = corAR1( form = ~1|Episode, value = .13),
             control =  lmeControl(maxIter = 2000,
@@ -145,10 +148,12 @@ ggplot(dat_p[dat_p$fastd==8,],
                  color=fastd, group = Episode)
              , size = 1, alpha = .5) +
   #geom_line(data = dat, aes(x = Date2, y = Mass, group = Episode), size = .5, color = "grey50") +
-  scale_y_continuous(limits = c(60,89)) +
+  #scale_y_continuous(limits = c(60,89)) +
   geom_vline(xintercept = days(floor(knot)) + min(dat$Date2), alpha = .5, 
              color = "#AEEEEE", linetype = "dashed") +
   geom_line(linewidth = 1.1, color = "salmon4") +
+  scale_y_continuous(minor_breaks = seq(60,90,1), 
+                     breaks = seq(60,90,5)) +
   scale_x_date(date_breaks = "2 years",date_minor_breaks = "1 year", date_labels = "%y") + 
   labs( x = "Date (year)",
         y = "Mass (kg)")

@@ -1,0 +1,26 @@
+Package: MartysWeight
+Title: My project for data about my weight
+Version: 0.0.1
+Authors@R: 
+    person("Márton", "Kiss", email = "mrkmarton@gmail.com", role = c("aut", "cre"))
+Description: My project for data about my weight.
+License: MIT + file LICENSE
+Encoding: UTF-8
+VignetteBuilder: knitr
+LazyData: true
+RoxygenNote: 7.2.3
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 3.5.0),
+    ggplot2,
+    lubridate,
+    dplyr,
+    knitr,
+    here, 
+    rmarkdown,
+    rstudioapi,
+    tibble,
+    tidyr
+Suggests: 
+    testthat (>= 3.0.0),
+Config/testthat/edition: 3
