@@ -137,42 +137,59 @@ rolling_errors <- function(
         mad  = NA,
         cor. = NA
       ))
-  }
-  
-
-  
-  return(
-    data.frame(
-      rmse = sum((dat_test$Mass - dat_test$pred)^2),
-      mad  = sum(abs(dat_test$Mass - dat_test$pred)),
-      cor. = cor(dat_test$numd, dat_test$Mass - dat_test$pred)
+  } else {
+    return(
+      data.frame(
+        rmse = sum((dat_test$Mass - dat_test$pred)^2),
+        mad  = sum(abs(dat_test$Mass - dat_test$pred)),
+        cor. = cor(dat_test$numd, dat_test$Mass - dat_test$pred)
+      )
     )
-  )
+  }
 }
 
 dates_rolling <- seq( min(dat$Date) + 3600*24*30, 
                       max(dat$Date), by = 3600*24*30)
 
+res_path <- here::here("inst","spliney","crossval_results",
+                       "roll_forecast_lastday_results.rdata")
+
+if (file.exists( res_path)) {
+  load(file = res_path)
+  out_old <- out
+} else {
+  out_old <- ""
+}
+
+
 out <- expand.grid(rmse = NA,
                   mad = NA,
                   cor. = NA,
-                  end_date = dates_rolling,
                   k = c(
-                    15
+                    50,60,70,80
                     ),
-                  days_before_last = c(3,5,10,15))
+                  days_before_last_perc = c(.15,.3,.4,.5,.6,.7,.8,.9,1)
+                  ) %>%
+  mutate(days_before_last = round(k * days_before_last_perc)) %>%
+  group_by(k) %>%
+  distinct(days_before_last, .keep_all = TRUE) %>% # remove possible duplicate levels
+  tidyr::crossing(., data.frame(end_date = dates_rolling)) %>% # getting all possible combinations
+  anti_join(.,out_old, by = c("k","end_date","days_before_last")) # remove already calculated results
+  
+# Keep only those records in out which are not present in out_old
 
-pb <- txtProgressBar()
-for (i in 24:nrow(out)) {
- out[i,1:3] <- rolling_errors(end_date = out$end_date[i],
-                           k = out$k[i],
-                           days_before_last = out$days_before_last[i]
-                           ) 
- setTxtProgressBar(pb, i/nrow(out))
+
+
+pb <- txtProgressBar(style = 3)
+for (i in 1:nrow(out)) {
+
+    out[i,1:3] <- rolling_errors(end_date = out$end_date[i],
+                             k = out$k[i],
+                             days_before_last = out$days_before_last[i]
+                             ) 
+  setTxtProgressBar(pb, i/nrow(out))
 }
 close(pb)
-
-
 
 
 res_path <- here::here("inst","spliney","crossval_results",
@@ -192,7 +209,8 @@ out_groupped <- out %>%
   group_by(k,days_before_last) %>%
   mutate(mad_mean  = mean(mad, na.rm = TRUE),
          rmse_mean = mean(rmse, na.rm = TRUE),
-         cor_mean  = mean(abs(cor.), na.rm = TRUE)
+         cor_mean  = mean(abs(cor.), na.rm = TRUE),
+          nas = sum(is.na(mad))
          ) %>%
   slice(1)
 
@@ -217,3 +235,9 @@ out %>%
     scale_y_sqrt() +
     facet_wrap(facets="k")# days_before_last")
 
+
+out_groupped %>%
+  ggplot(aes(x = days_before_last_perc, y = rmse_mean, group = days_before_last)) +
+  theme_bw() +
+  geom_point() +
+  geom_line(mapping = aes(group=k, color = k),alpha = .5) 
