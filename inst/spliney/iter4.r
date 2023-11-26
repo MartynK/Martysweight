@@ -101,38 +101,38 @@ rolling_errors <- function(
     ) %>%
     as.formula(.)
   
-  tryCatch({
-  mod <- gls( expre,
-              #random = ~ 0 + fastd_truncated|Episode,
-              weights = varPower(),
-              #correlation = corAR1( form = ~1|Episode, value = .13),
-              control =  glsControl(maxIter = 2000,
-                                    msMaxIter = 3000,
-                                    #niterEM = 400,
-                                    msVerbose = FALSE,
-                                    tolerance = 1e-6,
-                                    msTol = 1e-6),
-              data = dat)
-  }, error = function(e) {
+  try(silent = TRUE, {
+    mod <- gls( expre,
+                #random = ~ 0 + fastd_truncated|Episode,
+                weights = varPower(),
+                #correlation = corAR1( form = ~1|Episode, value = .13),
+                control =  glsControl(maxIter = 2000,
+                                      msMaxIter = 3000,
+                                      #niterEM = 400,
+                                      msVerbose = FALSE,
+                                      tolerance = 1e-6,
+                                      msTol = 1e-6),
+                data = dat)
+    
+    dat_test$pred <- predict(mod, newdata = dat_test)
+  })
+  
+  if (!(exists("mod") & "pred" %in% colnames(dat_test))) {
     return(
       data.frame(
         rmse = NA,
         mad  = NA,
         cor. = NA
+      ))
+  } else {
+    return(
+      data.frame(
+        rmse = sum((dat_test$Mass - dat_test$pred)^2),
+        mad  = sum(abs(dat_test$Mass - dat_test$pred)),
+        cor. = cor(dat_test$numd, dat_test$Mass - dat_test$pred)
       )
     )
-  })
-  
-  
-  dat_test$pred <- predict(mod, newdata = dat_test)
-  
-  return(
-    data.frame(
-      rmse = sum((dat_test$Mass - dat_test$pred)^2),
-      mad  = sum(abs(dat_test$Mass - dat_test$pred)),
-      cor. = cor(dat_test$numd, dat_test$Mass - dat_test$pred)
-    )
-  )
+  }
 }
 
 dates_rolling <- seq( min(dat$Date) + 3600*24*30, 
@@ -143,17 +143,15 @@ out <- expand.grid(rmse = NA,
                   cor. = NA,
                   end_date = dates_rolling,
                   k = c(
-                    25,35,45,55
+                    15,50
                     ))
-pb <- txtProgressBar()
+pb <- txtProgressBar(style=3)
 for (i in 1:nrow(out)) {
  out[i,1:3] <- rolling_errors(end_date = out$end_date[i],
                            k = out$k[i]) 
  setTxtProgressBar(pb, i/nrow(out))
 }
 close(pb)
-
-
 
 
 res_path <- here::here("inst","spliney","crossval_results",
@@ -163,7 +161,7 @@ if (file.exists( res_path)) {
   out_new <- out
   load(file = res_path)
   out <- bind_rows( out, out_new)
-  save(out, file = res_path)  
+  save(out, file = res_path)
 } else {
   save(out, file = res_path)
 }

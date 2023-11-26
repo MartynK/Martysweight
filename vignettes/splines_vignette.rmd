@@ -6,26 +6,134 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+knitr::opts_chunk$set(
+  # A nyers szöveg kimenetel elé ne tegyen '##'-t
+  comment = NA,
+  # mutassa a kódokat
+  echo = TRUE,
+  # Ne cache-eljen
+  cached = FALSE,
+  # Ne írja ki a warningokat
+  warning = FALSE,
+  message = FALSE,
+  # Ábra középre rendezése
+  fig.align = 'center',
+  #fig.asp = .75,                          # Ábra Hossz/szélesség
+  # legyenek 60 karakter szélességűre tördelve
+  tidy.opts = list(width.cutoff = 60),
+  # legyenek clean codingra megformázva
+  tidy = TRUE,#"styler",
+  # PNG legyen az alapértelmezett képformátum
+  dev = 'png',#'tiff',
+  compression = 'lzw',
+  # a PNG képek elég jó minőségűek legyenek
+  dpi = 300
+  #,fig.path = fig_directory  # Ábra kimenet helye
+)
+
 ```
 
 ## Motivation 
 
-I have an excel file with all of my (known) recorded weights including te ones I recorded when I was into (extended) intermittent fasting. I want to fit an intuitive model describing my mass as a function of time.
+I have an excel file with all of my (known) recorded weights including the ones I recorded when I was into (extended) intermittent fasting. I want to fit an intuitive model describing my mass as a function of time.
 
-I'm using natural splines with a set method for determining knot placements; I'm setting a knot after 'n' days of valid observations.
+My long term motivation is to both build a descriptive model of my weight and also to build a predictive model(ling technique) to forecast my weight for the next 30 days in the hopes of my recent changes to inform the model what can be expected medium term given a somewhat constant set of behavior.  
 
-Next steps are to determine the 'best' value for 'n'. I plan to use a rolling forecast but not with mixed models due to computatonal complexity.
+It seems that after the below optimization the resulting model can achieve both goals.
 
-I'm also not sure whether mixed modelling is the best approach here.
+# Methods
 
-My long term motivation is to both build a descriptive model of my weight and also to build a predictive model(ling technique) to forecast my weight for the next 30 days in the hopes of my recent changes to inform the model what can be expected medium term given a constant set of behavior.
+I'm using natural splines with a method for determining knot placements; I'm setting a knot after '**k**' days of valid observations.
+
+Next steps are to determine the 'best' value for 'k'. I used rolling forecasts with a 30 day window; ie. to predict the values for the next month based on a model fit on data up until the month in question.
+
+Another parameter is the number of observations after the last knot (**d**), as in is it better for prediction purposes to have the last knot closer to the borders of the data (outside of which the function is linear) or to have as much data as possible after the last knot.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+res_path <- here::here("inst","spliney","crossval_results",
+                       "roll_forecast_lastday_results.rdata")
+load(file = res_path)
+
+out_groupped <- out %>%
+  group_by(k,days_before_last) %>%
+  mutate(mad_mean  = mean(mad, na.rm = TRUE),
+         rmse_mean = mean(rmse, na.rm = TRUE),
+         cor_mean  = mean(abs(cor.), na.rm = TRUE),
+          nas = sum(is.na(mad))
+         ) %>%
+  slice(1)
+
+
+out_groupped %>%
+  mutate(days_before_last_perc = days_before_last_perc * 100) %>%
+  dplyr::rename(`d%` = "days_before_last_perc") %>%
+  ggplot(aes(x = k, y = rmse_mean, group = `d%`, 
+             color = `d%`)) +
+  theme_bw() +
+  geom_point() +
+  geom_line(alpha = .25) +
+  labs(y = "mean RMSE")
+
+```
+
+
+
+I'm also not sure whether linear, GLS, or mixed modelling is the best approach here.
+
+### GLS
+
+When switching out the model for a GLS one (the results were 'a bit' heteroscedastic) the RMSE jumps to ~2x, as well as suggesting widely different parameters. Considering it a dead end.
+
+```{r, fig.height=4}
+
+res_path <- here::here("inst","spliney","crossval_results",
+                       "roll_forecast_lastday_results_gls.rdata")
+load(file = res_path)
+
+out_groupped <- out %>%
+  group_by(k,days_before_last) %>%
+  mutate(mad_mean  = mean(mad, na.rm = TRUE),
+         rmse_mean = mean(rmse, na.rm = TRUE),
+         cor_mean  = mean(abs(cor.), na.rm = TRUE),
+          nas = sum(is.na(mad))
+         ) %>%
+  slice(1)
+
+
+out_groupped %>%
+  mutate(days_before_last_perc = days_before_last_perc * 100) %>%
+  dplyr::rename(`d%` = "days_before_last_perc") %>%
+  ggplot(aes(x = k, y = rmse_mean, group = `d%`, 
+             color = `d%`)) +
+  theme_bw() +
+  geom_point() +
+  geom_line(alpha = .25) +
+  labs(y = "mean RMSE")
+
+```
+
+### LME
+
+Attempted to fit an lme() model with '*episodes*' between feedings as random effects (intercept or slope+intercepts with time since last feeding). The results were less than persuasive.
+
 
 ## Results
 
+The above parameters were fixed as *k = 13* and *d = 9*. The resulting model is good for prediction as per the optimization of the parameters done before and it seems to decently capture the observed dynamcs through the years.
+
+It is my experience that when modelling a time series with a spline especially with not-missing at random data the 'real' concern is information overload, as in a model with fewer knots capture the underlying tendencies with less precision but may be better interpreted for some stakeholders.  
+
+I'm certain that for someone with different habits concerning weight data collection, these hyperparameters (k, d) would be different and should be revisited if my habits regarding their collection change significantly.  
+
+
 ```{r}
 
-library(nlme)
+library(readxl)
+library(splines)
 library(ggplot2)
 library(dplyr)
 library(lubridate)
@@ -35,12 +143,12 @@ setwd(here::here())
 
 #####
 
-k <- 15 # optim. by rolling forecasts
+k <- 13
+days_before_last <- 9
 
-#######
-
+#####
 dat <- here::here("inst","extdata","martysweight.xlsx") %>%
-  readxl::read_excel( col_types = c("date", "numeric", "numeric", 
+  read_excel( col_types = c("date", "numeric", "numeric", 
                             "numeric", "numeric", "numeric","numeric")) %>%
   filter(is.na(Mass) == FALSE) %>%
   mutate( Time_hours = ifelse( is.na(Time_hours)== TRUE, 12, Time_hours),
@@ -71,51 +179,31 @@ dat <- dat %>%
     
   )
 
-# Initialize the first episode
-act_episode    <- 1
-dat$Episode[1] <- 1
-
-# Loop through the rows to assign episodes
-for(i in 2:nrow(dat)) {
-  if ( dat$fast_diff[i] > 0.5) {
-    act_episode <- act_episode + 1
-  }
-  dat$Episode[i] <- act_episode
-}
-
-# Convert 'Episode' back to factor if needed
-dat$Episode <- as.factor(dat$Episode)
-
 ##########
 
+days_unique <- unique(floor(dat$numd))
+days_as_knots <- seq(k,length(days_unique),by= k)
+days_before_last_act <- length(days_unique) - dplyr::last(days_as_knots)
+days_before_diff <- days_before_last_act - days_before_last
+days_as_knots_corr <- days_as_knots + days_before_diff
+days_as_knots_corr <- 
+  days_as_knots_corr[ days_as_knots_corr > 10 & # hard coded
+                        days_as_knots_corr < length(days_unique)]
 
-knot <- c()
-dayswithdp <- 0
-days <- floor( dat$numd)
-for (i in seq(1,max(floor(dat$numd)))) {
-  if(dayswithdp>=k) {
-    knot_act <- (  dat$numd[ which(days == i)] 
-                   + dat$numd[ which(days == i)-1]
-    ) / 2 # Gives singularities
-    knot <- c(knot,i)# knot_act would have gone here
-    dayswithdp <- 0
-  }
-  dayswithdp <- ifelse(i %in% days, dayswithdp+1, dayswithdp)
-}
+knot <- dat %>%
+  filter(floor(numd) %in% days_unique[days_as_knots_corr]) %>%
+  .$numd %>%
+  floor %>%
+  unique
 
-#knot2 <- dat$numd[ floor(seq( 1, nrow(dat), length.out = k+2)[2:(k+1)])]
 
 expre <- paste(knot,collapse=",") %>%
   paste( "c(", ., ")") %>%
-  paste("Mass ~ splines::ns( fastd, df = 2) + splines::ns(numd, knots =", ., ")" 
+  paste("Mass ~ ns( fastd, df = 1) + ns(numd, knots =", ., ")" 
   ) %>%
   as.formula(.)
 
-mod <- lme( expre,
-            #random = ~ 0 + fastd_truncated|Episode,
-            random = ~ 1|Episode,
-            weights = varPower(),
-            #correlation = corAR1( form = ~1|Episode, value = .13),
+mod <- lm( expre,
             control =  lmeControl(maxIter = 2000,
                                   msMaxIter = 3000,
                                   niterEM = 400,
@@ -124,38 +212,48 @@ mod <- lme( expre,
                                   msTol = 1e-6),
             data = dat)
 
-dat_p <- expand.grid( fastd = c(0,8,16,24),
-                      numd = c(seq(1,10,.1),seq(35,max(dat$numd)+1,.1)),
-                      maxinlast = 12,
-                      Episode = 14) %>%
+
+dat_p <- expand.grid( fastd = c(8),
+                      numd = seq(1,max(dat$numd)+30,.1),
+                      maxinlast = 12
+                      ) %>%
   mutate( fastd_truncated = fastd)
-dat_p$pred <- predict(mod, newdata = dat_p)
+dat_p$pred <- predict(mod, newdata = dat_p, level = 0)
 
 dat_p$numd <- as.Date( dat_p$numd, origin = min(dat$Date))
 dat$Date2  <- as.Date( dat$numd,   origin = min(dat$Date))
 
-
-ggplot(dat_p[dat_p$fastd==8,], 
-       aes(x=numd, y = pred, group = fastd, color = fastd)) +
-  theme_bw() +
-  theme(panel.grid.major.x = element_line(colour = "grey40"),
-        panel.grid.minor.x = element_line(colour = "grey40")) +
-  stat_summary(data = dat, 
-               aes(x = Date2, y = Mass, group = Episode),
-               fun=mean, geom="line", colour="blue") +
-  geom_point(data = dat, 
-             aes(x = Date2, y = Mass, 
-                 color=fastd, group = Episode)
-             , size = 1, alpha = .5) +
-  #geom_line(data = dat, aes(x = Date2, y = Mass, group = Episode), size = .5, color = "grey50") +
-  #scale_y_continuous(limits = c(60,89)) +
-  geom_vline(xintercept = days(floor(knot)) + min(dat$Date2), alpha = .5, 
-             color = "#AEEEEE", linetype = "dashed") +
-  geom_line(linewidth = 1.1, color = "salmon4") +
-  scale_y_continuous(minor_breaks = seq(60,90,1), 
-                     breaks = seq(60,90,5)) +
-  scale_x_date(date_breaks = "2 years",date_minor_breaks = "1 year", date_labels = "%y") + 
-  labs( x = "Date (year)",
-        y = "Mass (kg)")
+dat_p %>%
+  filter(fastd==8) %>%
+  mutate(hours_fasted = fastd) %>%
+  ggplot(aes(x=numd, y = pred, color = hours_fasted)) +
+    theme_bw() +
+    theme(panel.grid.major.x = element_line(colour = "grey40"),
+          panel.grid.minor.x = element_line(colour = "grey40")) +
+    geom_point(data = dat, 
+               aes(x = Date2, y = Mass, 
+                   color=fastd, group = Episode)
+               , size = 1, alpha = .5) +
+    scale_y_continuous(limits = c(60,89)) +
+    geom_vline(xintercept = days(floor(knot)) + min(dat$Date2), alpha = .5, 
+               color = "#AEEEEE", linetype = "dashed") +
+    geom_line(linewidth=1.1, color = "salmon4") +
+    scale_x_date(date_breaks = "2 years",date_minor_breaks = "1 year", date_labels = "%y") + 
+    labs( x = "Date (Year)",
+          y = "Mass (kg)")
 
 ```
+
+
+
+Model diagnostics are acceptable which is great news.  
+
+
+```{r}
+
+par(mfcol=c(2,2))
+plot(mod,1:4)
+par(mfcol=c(1,1))
+
+```
+

@@ -1,4 +1,5 @@
 # Optimizing knot placement via rolling forecasts; best no. obs. before the end?
+# Using GLS model; pred. errors + much higher RMSE
 
 library(readxl)
 library(splines)
@@ -69,16 +70,16 @@ rolling_errors <- function(
     # HELPER FUNCTION
     # putting the choice of model here for modularity.
     
-    mod <- lm( expre.,
-               #random = ~ 0 + fastd_truncated|Episode,
-               #weights = varPower(),
+    mod <- lme( expre.,
+               random = ~ 1|Episode,
+               weights = varPower(),
                #correlation = corAR1( form = ~1|Episode, value = .13),
-               # control =  glsControl(maxIter = 2000,
-               #                       msMaxIter = 3000,
-               #                       #niterEM = 400,
-               #                       msVerbose = FALSE,
-               #                       tolerance = 1e-6,
-               #                       msTol = 1e-6),
+               control =  lmeControl(maxIter = 2000,
+                                     msMaxIter = 3000,
+                                     #niterEM = 400,
+                                     msVerbose = FALSE,
+                                     tolerance = 1e-6,
+                                     msTol = 1e-5),
                data = dat.)
     return(mod)
   }
@@ -133,8 +134,7 @@ rolling_errors <- function(
   
   try(silent = TRUE, 
       {
-
-        mod <- modfun(expre. = expre, dat. = dat)
+        mod <- modfun(expre. = expre, dat. = dat_train)
         
         dat_test$pred <- predict(mod, newdata = dat_test)
         })
@@ -161,7 +161,7 @@ dates_rolling <- seq( min(dat$Date) + 3600*24*30,
                       max(dat$Date), by = 3600*24*30)
 
 res_path <- here::here("inst","spliney","crossval_results",
-                       "roll_forecast_lastday_results.rdata")
+                       "roll_forecast_lastday_results_lme.rdata")
 
 if (file.exists( res_path)) {
   load(file = res_path)
@@ -174,16 +174,18 @@ if (file.exists( res_path)) {
 out <- expand.grid(rmse = NA,
                   mad = NA,
                   cor. = NA,
-                  k = seq(9,50,length.out=10) %>% round,
-                  days_before_last_perc = seq(.01, 1, length.out = 4)
+                  k = seq(2,80,length.out=20) %>% round,
+                  days_before_last_perc = seq(.01, 1, length.out = 8)
                   ) %>%
   mutate(days_before_last = round(k * days_before_last_perc)) %>%
   group_by(k) %>%
   distinct(days_before_last, .keep_all = TRUE) %>% # remove possible duplicate levels
   tidyr::crossing(., data.frame(end_date = dates_rolling)) 
 
-out <- out %>% # getting all possible combinations
-  anti_join(.,out_old, by = c("k","end_date","days_before_last")) # remove already calculated results
+if ( typeof(out_old) != "character") {
+  out <- out %>% # getting all possible combinations
+    anti_join(.,out_old, by = c("k","end_date","days_before_last")) # remove already calculated results
+}
   
 # Keep only those records in out which are not present in out_old
 
@@ -202,7 +204,7 @@ close(pb)
 
 
 res_path <- here::here("inst","spliney","crossval_results",
-                       "roll_forecast_lastday_results.rdata")
+                       "roll_forecast_lastday_results_lme.rdata")
 
 if (file.exists( res_path)) {
   out_new <- out

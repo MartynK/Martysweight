@@ -1,10 +1,7 @@
 library(readxl)
 library(splines)
-library(effects)
-library(nlme)
 library(ggplot2)
 library(dplyr)
-library(MuMIn)
 library(lubridate)
 
 setwd(here::here())
@@ -12,8 +9,8 @@ setwd(here::here())
 
 #####
 
-k <- 70
-days_before_last <- 49
+k <- 13
+days_before_last <- 9
 
 #####
 dat <- here::here("inst","extdata","martysweight.xlsx") %>%
@@ -105,7 +102,7 @@ expre <- paste(knot,collapse=",") %>%
   as.formula(.)
 
 mod <- lme( expre,
-            random = ~ 0 + fastd_truncated|Episode,
+            random = ~ 1|Episode,
             weights = varPower(),
             #correlation = corAR1( form = ~1|Episode, value = .13),
             control =  lmeControl(maxIter = 2000,
@@ -115,6 +112,17 @@ mod <- lme( expre,
                                   tolerance = 1e-6,
                                   msTol = 1e-6),
             data = dat)
+
+# mod <- gls( expre,
+#             weights = varPower(),
+#             #correlation = corAR1( form = ~1|Episode, value = .13),
+#             control =  lmeControl(maxIter = 2000,
+#                                   msMaxIter = 3000,
+#                                   niterEM = 400,
+#                                   msVerbose = FALSE,
+#                                   tolerance = 1e-6,
+#                                   msTol = 1e-6),
+#             data = dat)
 
 #ACF(mod) %>% plot
 # plot(ranef(mod))
@@ -139,52 +147,40 @@ plot(predictorEffects(mod,
 # anova(mod)
 
 
-dat_p <- expand.grid( fastd = c(0,8,16,24),
-                      numd = c(seq(1,10,.1),seq(35,max(dat$numd)+1,.1)),
-                      maxinlast = 12,
-                      Episode = 14) %>%
+dat_p <- expand.grid( fastd = c(8),
+                      numd = seq(1,max(dat$numd)+1,.1),
+                      maxinlast = 12
+                      #Episode = 14
+                      ) %>%
   mutate( fastd_truncated = fastd)
-dat_p$pred <- predict(mod, newdata = dat_p)
+dat_p$pred <- predict(mod, newdata = dat_p, level = 0)
 
 dat_p$numd <- as.Date( dat_p$numd, origin = min(dat$Date))
 dat$Date2  <- as.Date( dat$numd,   origin = min(dat$Date))
 
+dat_p %>%
+  filter(fastd==8) %>%
+  ggplot(aes(x=numd, y = pred, group = fastd, color = fastd)) +
+    theme_bw() +
+    theme(panel.grid.major.x = element_line(colour = "grey40"),
+          panel.grid.minor.x = element_line(colour = "grey40")) +
+    stat_summary(data = dat, 
+                 aes(x = Date2, y = Mass, group = Episode),
+                 fun=mean, geom="line", colour="blue") +
+    geom_point(data = dat, 
+               aes(x = Date2, y = Mass, 
+                   color=fastd, group = Episode)
+               , size = 1, alpha = .5) +
+    #geom_line(data = dat, aes(x = Date2, y = Mass, group = Episode), size = .5, color = "grey50") +
+    scale_y_continuous(limits = c(60,89)) +
+    geom_vline(xintercept = days(floor(knot)) + min(dat$Date2), alpha = .5, 
+               color = "#AEEEEE", linetype = "dashed") +
+    geom_line(size=1.1, color = "salmon4") +
+    scale_x_date(date_breaks = "2 years",date_minor_breaks = "1 year", date_labels = "%y") + 
+    labs( x = "Date",
+          y = "Mass")
 
-ggplot(dat_p[dat_p$fastd==8,], 
-       aes(x=numd, y = pred, group = fastd, color = fastd)) +
-  theme_bw() +
-  theme(panel.grid.major.x = element_line(colour = "grey40"),
-        panel.grid.minor.x = element_line(colour = "grey40")) +
-  stat_summary(data = dat, 
-               aes(x = Date2, y = Mass, group = Episode),
-               fun=mean, geom="line", colour="blue") +
-  geom_point(data = dat, 
-             aes(x = Date2, y = Mass, 
-                 color=fastd, group = Episode)
-             , size = 1, alpha = .5) +
-  #geom_line(data = dat, aes(x = Date2, y = Mass, group = Episode), size = .5, color = "grey50") +
-  scale_y_continuous(limits = c(60,89)) +
-  geom_vline(xintercept = days(floor(knot)) + min(dat$Date2), alpha = .5, 
-             color = "#AEEEEE", linetype = "dashed") +
-  geom_line(size=1.1, color = "salmon4") +
-  scale_x_date(date_breaks = "2 years",date_minor_breaks = "1 year", date_labels = "%y") + 
-  labs( x = "Date",
-        y = "Mass")
 
 
-pic <- ggplot(dat_p, aes(x=numd, y = pred, group = fastd, color = fastd)) +
-  theme_bw() +
-  geom_line(size=.9) +
-  geom_point(data = dat, aes(x = Date2, y = Mass, color=fastd, group = Episode), size = 1) +
-  geom_line(data = dat, aes(x = Date2, y = Mass, group = Episode), size = .5, color = "grey50") +
-  scale_y_continuous(limits = c(80,87)) +
-  geom_vline(xintercept = knot) +
-  scale_x_date(date_breaks = "1 week",date_minor_breaks = "1 week", date_labels = "%m-%d") + 
-  labs( x = "Date",
-        y = "Mass") +
-  scale_x_date(date_breaks = "1 week",
-               date_minor_breaks = "1 day", 
-               date_labels = "%m-%d",
-               limits = c(max(dat_p$numd)-14, max(dat_p$numd)))
 
 
