@@ -4,3 +4,4 @@ I have an excel file with all of my (known) recorded weights including te ones I
 
 I also have some other datasets scavenged from all around and some results playing with my blood sugar monitor.
 
+Site is available at : https://martynk.github.io/Martysweight/ 
