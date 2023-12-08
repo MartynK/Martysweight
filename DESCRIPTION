@@ -1,6 +1,6 @@
 Package: MartysWeight
 Title: My project for data about my weight
-Version: 0.0.1
+Version: 1.0.0
 Authors@R: 
     person("Márton", "Kiss", email = "mrkmarton@gmail.com", role = c("aut", "cre"))
 Description: My project for data about my weight.

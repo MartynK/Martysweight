@@ -2,6 +2,8 @@ library(readr)
 library(splines)
 library(nlme)
 library(effects)
+library(dplyr)
+library(ggplot2)
 
 studtab2 <- readr::read_delim(here::here("inst", "extdata", "studtab2.csv"), 
                        ";", escape_double = FALSE, trim_ws = TRUE)
@@ -32,10 +34,15 @@ mod3 <- gls(wpost ~ wpr + length * sex,
 plot(predictorEffects(mod3))
 
 pr <- expand.grid( sex = "M",
-                   length = 1:10,
+                   length = 0:10,
                    wpr = 86)
 
 pr$pr <- predict(mod2,newdata=pr,se.fit=TRUE)$fit
 pr$se <- predict(mod2,newdata=pr,se.fit=TRUE)$se.fit
 
+pr %>%
+  ggplot(aes(x= length, y = I(pr - 86))) +
+    theme_bw() +
+    geom_line() +
+    scale_x_continuous(breaks = c(1,3,6,9))
 
