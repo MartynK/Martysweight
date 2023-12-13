@@ -38,7 +38,7 @@ knitr::opts_chunk$set(
 
 I have an excel file with all of my (known) recorded weights including the ones I recorded when I was into (extended) intermittent fasting. I want to fit an intuitive model describing my mass as a function of time.
 
-My long term motivation is to both build a descriptive model of my weight and also to build a predictive model(ling technique) to forecast my weight for the next 30 days in the hopes of my recent changes to inform the model what can be expected medium term given a somewhat constant set of behavior.
+My long term motivation is to both build a descriptive model of my weight and also to build a predictive model(ling technique) to forecast my weight for the next 30 days in the hopes of that my recent changes would inform the model and me what to expect given a somewhat constant set of behavior.
 
 It seems that after the below optimization the resulting model can achieve both goals.
 
@@ -48,7 +48,9 @@ I'm using natural splines with a method for determining knot placements; I'm set
 
 Next steps are to determine the 'best' value for 'k'. I used rolling forecasts with a 30 day window; ie. to predict the values for the next month based on a model fit on data up until the month in question.
 
-Another parameter is the number of observations after the last knot (**d**), as in is it better for prediction purposes to have the last knot closer to the borders of the data (outside of which the function is linear) or to have as much data as possible after the last knot.
+Another parameter is the number of observations after the last knot (**d**), as in is it better for prediction purposes to have the last knot closer to the borders of the data (outside of which the function is linear) or to have some data after the last knot.
+
+(Note: This optimization is somewhat lengthy, so it was done once and I did not update it since 2023-11-20).
 
 ```{r}
 library(dplyr)
@@ -80,11 +82,11 @@ out_groupped %>%
 
 ```
 
-I'm also not sure whether linear, GLS, or mixed modelling is the best approach here.
+I'm also not sure whether linear, GLS, or mixed modelling is the best approach here as this approach is expected to result in a model with high autocorrelation of its residuals.
 
 ### GLS
 
-When switching out the model for a GLS one (the results were 'a bit' heteroscedastic) the RMSE jumps to \~2x, as well as suggesting widely different parameters. Considering it a dead end.
+When switching out the model for a GLS one modelling variance with *varPower()* in keeping with the tendency for the scales to measure with greater uncertainty as the weight gets higher. The RMSE from these models jumps to \~2x, as well as suggesting widely different parameters. Fitting autoregressive models caused nonconvergence. Considering it a dead end.
 
 ```{r, fig.height=4}
 
@@ -116,13 +118,17 @@ out_groupped %>%
 
 ### LME
 
-Attempted to fit an lme() model with '*episodes*' between feedings as random effects (intercept or slope+intercepts with time since last feeding). When attempting to fit the model however, it would not converge, possibly due to the sparse nature of the observations, eg. few 'episodes' have 2 or more observations.
+Attempted to fit an lme() model with '*episodes*' between feedings as random effects (intercept or slope+intercepts with time since last feeding). When attempting to fit the model however, it would not converge, possibly due to the sparse nature of the observations, eg. few '*episodes*' have 2 or more observations.
 
 ## Results
 
-The above parameters were fixed as *k = 13* and *d = 9*. The resulting model is good for prediction as per the optimization of the parameters done before and it seems to decently capture the observed dynamcs through the years.
+The above parameters were fixed as *k = 13* and *d = 9*. The resulting model is good for prediction as per the optimization of the parameters done before and it seems to decently capture the observed dynamics through the years.
 
-It is my experience that when modelling a time series with a spline especially with not-missing at random data the 'real' concern is information overload, as in a model with fewer knots capture the underlying tendencies with less precision but may be better interpreted for some stakeholders.
+It is my experience that when modelling a time series with a spline especially with not-missing at random data the 'real' concern is information overload for the observer, as in a model with fewer knots capture the underlying tendencies with less precision but may be better interpreted for some stakeholders.
+
+In this example observations were made more often when I was motivated to modulate (lose) weight and this stark deviation from random or methodical observations made this example fun for me the underlying question being how to handle periods of extremely sparse information.
+
+Placing knots at regular intervals as denoted by the available information seems like a natural move.
 
 I'm certain that for someone with different habits concerning weight data collection, these hyperparameters (k, d) would be different and should be revisited if my habits regarding their collection change significantly.
 
@@ -239,7 +245,7 @@ dat_p %>%
 
 ```
 
-Trying out the model's predictive powers, here is the projection for the next 30 days. Per the natural spline's definition, it should be linear. While the knot placement was optimized for predicting this interval, but it should be kept in mind that changing 'behavior' mid-period should seriously impact the results.
+Trying out the model's predictive powers, here is the projection for the next 30 days. Per the natural spline's definition, it should be linear. While the knot placement was optimized for predicting this interval, but it should be kept in mind that changing 'behavior' mid-period (eg. starting/giving up a diet 2 weeks after the last observation) should seriously impact the results.
 
 ```{r}
 
@@ -279,7 +285,7 @@ dat_p %>%
 
 ## Diagnostics
 
-Model diagnostics are acceptable (to me) which is great news.
+Model diagnostics are acceptable (to me) which is great news. Autocorrelation is high unfortunately, but perhaps in light of the hyperparameter optimization with rolling forecasts, this may be excused.
 
 ```{r, out.width= "50%"}
 
@@ -288,6 +294,7 @@ plot(mod,1)
 plot(mod,3)
 plot(mod,4)
 ggpubr::ggqqplot(residuals(mod))
+plot(acf(residuals(mod)))
 
 
 ```
