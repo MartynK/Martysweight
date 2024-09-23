@@ -1,6 +1,6 @@
 ---
 title: "Marty's weight"
-author: "Dr. Kiss Márton"
+author: "Marton Kiss MD"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -38,17 +38,26 @@ knitr::opts_chunk$set(
 
 I have an excel file with all of my (known) recorded weights including the ones I recorded when I was into (extended) intermittent fasting. I want to fit an intuitive model describing my mass as a function of time.
 
-My long term motivation is to both build a descriptive model of my weight and also to build a predictive model(ling technique) to forecast my weight for the next 30 days in the hopes of that my recent changes would inform the model and me what to expect given a somewhat constant set of behavior.
+My long term motivation is to both build a descriptive model of my weight and also to build a predictive model to forecast my weight for the next 30 days in the hopes of that my recent changes would inform the model and me what to expect given a somewhat constant set of behavior.
 
-It seems that after the below optimization the resulting model can achieve both goals.
+It seems that after the optimization presented below the resulting model can achieve both goals.
 
 # Methods
 
 I'm using natural splines with a method for determining knot placements; I'm setting a knot after '**k**' days of valid observations.
 
-Next steps are to determine the 'best' value for 'k'. I used rolling forecasts with a 30 day window; ie. to predict the values for the next month based on a model fit on data up until the month in question.
+A necessary exercise is to determine the 'best' value for 'k'. 
 
 Another parameter is the number of observations after the last knot (**d**), as in is it better for prediction purposes to have the last knot closer to the borders of the data (outside of which the function is linear) or to have some data after the last knot.
+
+For optimizing **k** and **d**, I used **rolling forecasts**, as in:
+ - fitting a model with a given *d* & *k* on data up until a certain date
+ - predicting all observations based on the model after that date during a 30 day window
+ - calculating the *RMSE* between the predicted and observed values
+ - repeating the above steps when the data used for model fitting (the training data) gets extended anoter 30 days
+ - summing up the RMSEs for each model which was fitted
+ - See what *k,d* pair produces the smallest summed up RMSE
+
 
 (Note: This optimization is somewhat lengthy, so it was done once and I did not update it since 2023-11-20).
 
@@ -76,19 +85,26 @@ out_groupped %>%
   ggplot(aes(x = k, y = rmse_mean, group = `d%`, 
              color = `d%`)) +
   theme_bw() +
-  geom_point() +
-  geom_line(alpha = .25) +
-  labs(y = "mean RMSE")
+  scale_y_continuous(limits = c(0,max(out_groupped$rmse_mean))) +
+  geom_point(alpha = .25) +
+  geom_line(alpha = .125) +
+  labs(y = "mean RMSE",
+       caption = "'d' was between 0 and 80, color is given as percentage of max d")
 
 ```
 
-I'm also not sure whether linear, GLS, or mixed modelling is the best approach here as this approach is expected to result in a model with high autocorrelation of its residuals.
+
+## Alternative models
+
+I'm also not sure whether linear, GLS, or mixed modelling is the best approach here as the vanilla linear model is expected to result in a model with a high autocorrelation within its residuals.
 
 ### GLS
 
 When switching out the model for a GLS one modelling variance with *varPower()* in keeping with the tendency for the scales to measure with greater uncertainty as the weight gets higher. The RMSE from these models jumps to \~2x, as well as suggesting widely different parameters. Fitting autoregressive models caused nonconvergence. Considering it a dead end.
 
 ```{r, fig.height=4}
+
+out_groupped_bu <- out_groupped # backing up due to state change, bad form
 
 res_path <- here::here("inst","spliney","crossval_results",
                        "roll_forecast_lastday_results_gls.rdata")
@@ -110,15 +126,19 @@ out_groupped %>%
   ggplot(aes(x = k, y = rmse_mean, group = `d%`, 
              color = `d%`)) +
   theme_bw() +
+  scale_y_continuous(limits = c(0,max(out_groupped$rmse_mean))) +
   geom_point() +
   geom_line(alpha = .25) +
-  labs(y = "mean RMSE")
+  # add the other pic's data in red for comparison
+  geom_point(data = out_groupped_bu %>% dplyr::rename(`d%` = "days_before_last_perc"), aes(y = rmse_mean), color = "red") +
+  labs(y = "mean RMSE",
+       caption = "'d' was between 0 and 80, color is given as percentage of max d\nRed points are the results from the linear model")
 
 ```
 
 ### LME
 
-Attempted to fit an lme() model with '*episodes*' between feedings as random effects (intercept or slope+intercepts with time since last feeding). When attempting to fit the model however, it would not converge, possibly due to the sparse nature of the observations, eg. few '*episodes*' have 2 or more observations.
+Attempted to fit an lme() model with '*episodes*' between feedings as random effects (intercept or slope+intercepts with time since last feeding). When attempting to fit the model however, it would not converge, possibly due to the sparse nature of the observations, eg. few '*episodes*' have 2 or more observations. (This approach worked better when I was more obsessive, and recorded multiple measurements between feedings.)
 
 ## Results
 
@@ -126,7 +146,9 @@ The above parameters were fixed as *k = 13* and *d = 9*. The resulting model is 
 
 It is my experience that when modelling a time series with a spline especially with not-missing at random data the 'real' concern is information overload for the observer, as in a model with fewer knots capture the underlying tendencies with less precision but may be better interpreted for some stakeholders.
 
-In this example observations were made more often when I was motivated to modulate (lose) weight and this stark deviation from random or methodical observations made this example fun for me the underlying question being how to handle periods of extremely sparse information.
+In this example observations were made more often when I was motivated to modulate (lose) weight and this stark deviation from random  made this example fun for me. 
+
+The underlying problem stated another way is how to handle periods of extremely sparse information.
 
 Placing knots at regular intervals as denoted by the available information seems like a natural move.
 
@@ -266,7 +288,10 @@ dat_p %>%
   ggplot(aes(x=numd, y = pred, color = hours_fasted)) +
     theme_bw() +
     theme(panel.grid.major.x = element_line(colour = "grey40"),
-          panel.grid.minor.x = element_line(colour = "grey40")) +
+          panel.grid.minor.x = element_line(colour = "grey40"),
+          # smaller x axis text
+          axis.text.x = element_text(size = 7)
+          ) +
     geom_point(data = dat %>% filter(numd>5332), #max(numd)- 60),
                aes(x = Date2, y = Mass,
                    color=fastd, group = Episode)
@@ -275,7 +300,7 @@ dat_p %>%
     geom_vline(xintercept = days(floor(knot)) + min(dat$Date2), alpha = .5, 
                color = "#AEEEEE", linetype = "dashed") +
     geom_line(mapping = aes(group = factor(fastd)), linewidth=0.5) +
-    scale_x_date(date_breaks = "2 weeks",date_minor_breaks = "1 week"
+    scale_x_date(date_breaks = "8 weeks",date_minor_breaks = "4 weeks"
                  #, date_labels = "%y"
                  ) + 
     labs( x = "Date (Year)",
@@ -285,6 +310,8 @@ dat_p %>%
 ```
 
 ## Diagnostics
+
+This section is only interesting if you are interested in the model fit, and how correct some of the model's base assumption may be.
 
 Model diagnostics are acceptable (to me) which is great news. Autocorrelation is high unfortunately, but perhaps in light of the hyperparameter optimization with rolling forecasts, this may be excused.
 

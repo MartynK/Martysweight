@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 I have a dataset describing a study which involved fasting 1400+ subjects.  
 **I have no recollection where the data originated :(**  
+*I can recall that the data is not original and was obtained from the public domain.*
 
 Not hashing out this vignette as beautifully as it would be desirable until I find out where the data came from.  
 
