@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
   # legyenek 60 karakter szélességűre tördelve
   tidy.opts = list(width.cutoff = 60),
   # legyenek clean codingra megformázva
-  tidy = TRUE,#"styler",
+  tidy = FALSE,#"styler",
   # PNG legyen az alapértelmezett képformátum
   dev = 'png',#'tiff',
   compression = 'lzw',
