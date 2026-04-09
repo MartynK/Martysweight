@@ -74,7 +74,16 @@
       "Read(//c/Program Files/R/**)",
       "Bash(\"/c/Program Files/R/R-4.5.2/bin/Rscript.exe\" -e \":*)",
       "Bash(\"/c/Program Files/R/R-4.4.1/bin/Rscript.exe\" -e \"library\\(readxl\\); dat <- read_excel\\(''inst/extdata/anthropometrics.xlsx''\\); cat\\(''Dims:'', nrow\\(dat\\), ''x'', ncol\\(dat\\), ''\\\\n''\\); print\\(names\\(dat\\)\\)\")",
-      "Bash(\"/c/Program Files/R/R-4.5.0/bin/Rscript.exe\" -e \"library\\(readxl\\); dat <- read_excel\\(''inst/extdata/anthropometrics.xlsx''\\); options\\(width=200\\); cat\\(''Dims:'', nrow\\(dat\\), ''x'', ncol\\(dat\\), ''\\\\n''\\); print\\(names\\(dat\\)\\); cat\\(''\\\\n''\\); print\\(as.data.frame\\(dat\\)\\)\")"
+      "Bash(\"/c/Program Files/R/R-4.5.0/bin/Rscript.exe\" -e \"library\\(readxl\\); dat <- read_excel\\(''inst/extdata/anthropometrics.xlsx''\\); options\\(width=200\\); cat\\(''Dims:'', nrow\\(dat\\), ''x'', ncol\\(dat\\), ''\\\\n''\\); print\\(names\\(dat\\)\\); cat\\(''\\\\n''\\); print\\(as.data.frame\\(dat\\)\\)\")",
+      "Bash(\"/c/Program Files/R/R-4.5.0/bin/Rscript.exe\" -e \"library\\(readxl\\); dat <- read_excel\\('C:/Users/mrkma/OneDrive/DKM/Stats_R/R/Martysweight/inst/extdata/martysweight.xlsx'\\); cat\\('Cols:', paste\\(names\\(dat\\), collapse=', '\\), '\\\\n'\\); cat\\('Types:', paste\\(sapply\\(dat, class\\), collapse=', '\\), '\\\\n'\\); cat\\('Last 3 rows:\\\\n'\\); options\\(width=200\\); print\\(tail\\(dat, 3\\)\\)\")",
+      "Bash(mkdir -p \"C:/Users/mrkma/OneDrive/DKM/Stats_R/R/Martysweight/.claude/skills/measure_weight\")",
+      "Bash(mv \"C:/Users/mrkma/OneDrive/DKM/Stats_R/R/Martysweight/.claude/skills/measure_weight.md\" \"C:/Users/mrkma/OneDrive/DKM/Stats_R/R/Martysweight/.claude/skills/measure_weight/SKILL.md\")",
+      "Bash('/c/Program Files/R/R-4.5.0/bin/Rscript.exe' -e ':*)",
+      "Bash('/c/Program Files/R/R-4.5.1/bin/Rscript.exe' -e ':*)",
+      "Bash(\"/c/Program Files/R/R-4.5.2/bin/Rscript.exe\" -e \"library\\(openxlsx\\); cat\\('openxlsx loaded OK\\\\n'\\)\")",
+      "Bash('/c/Program Files/R/R-4.5.2/bin/Rscript.exe' -e ':*)",
+      "Bash(\"/c/Program Files/R/R-4.5.2/bin/Rscript.exe\" -e \"source\\('inst/simple_summ_plot/_append_weight.r'\\)\")",
+      "Bash(\"/c/Program Files/R/R-4.5.2/bin/Rscript.exe\" -e \"source\\('inst/simple_summ_plot/iter1.r'\\)\")"
     ],
     "deny": []
   }
