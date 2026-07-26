@@ -1,30 +1,33 @@
-# iter2.r — Anthropometrics: daily linear interpolation for all metrics
+# iter2.r — Anthropometrics: daily interpolation for all metrics
 #
-# Reads the transposed anthropometrics.xlsx, pivots to long format,
-# interpolates every metric daily, and outputs a faceted time-series plot
-# plus CSV/XLSX of the interpolated wide table.
+# Reads the tidy anthropometrics_tidy.xlsx (one row per observation, one
+# sheet per person, English column names -- see port_anthropometrics.r),
+# pivots to long format, interpolates every metric daily, and outputs a
+# faceted time-series plot plus CSV/XLSX of the interpolated wide table.
 #
 # Outputs:
 #   anthropometrics_plot.png
 #   anthropometrics_interpolated.csv
 #   anthropometrics_interpolated.xlsx
+#   quarterly_summary_anthro.csv / .xlsx
 #
 # ---- Opinion: best metrics for health & body composition tracking ----
 #
 # TIER 1 — track these first:
-#   waist (Haskörfogat)    Best single anthropometric predictor of
+#   waist                  Best single anthropometric predictor of
 #                          cardiometabolic risk and visceral adiposity.
 #                          WHO/AHA/IDF all endorse it.
-#   body_mass (Testtömeg)  Fundamental; trend over time matters more than
+#   body_mass              Fundamental; trend over time matters more than
 #                          any single reading.
-#   bf_jp3 (Jackson/Pollock 3)  Most validated 3-site skinfold equation;
-#                          captures body fat % better than individual folds.
+#   bf_jp3                 Jackson/Pollock 3-site: the most validated
+#                          skinfold equation; captures body fat % better
+#                          than individual folds.
 #   ffmi / ffmi_std        Fat-Free Mass Index. Best composite for lean mass
 #                          tracking, independent of height. A rising FFMI
 #                          with stable or falling BF% = real muscle gain.
 #
 # TIER 2 — useful supporting context:
-#   hip (Csípőkörfogat)    Enables waist-to-hip ratio (WHR >0.90 in men =
+#   hip                    Enables waist-to-hip ratio (WHR >0.90 in men =
 #                          increased CVD risk per WHO).
 #   bmi                    Imperfect but universal population reference.
 #   bf_navy / bf_mod_jp3   Alternative BF% estimates; comparing them to JP3
@@ -49,99 +52,39 @@ library(openxlsx)
 
 OUT_DIR <- here::here("inst", "simple_summ_plot")
 
-# ---- Hungarian -> English metric name mapping ----
+PERSON     <- "Marci"   # sheet name in anthropometrics_tidy.xlsx
+META_ROWS  <- 6         # metadata block above the header row
 
-METRIC_DICT <- tribble(
-  ~hu_pattern,           ~en_name,           ~unit,
-  "Testtömeg",           "body_mass",        "kg",
-  "^'Has$",              "abdomen_narrow",   "cm",
-  "Haskörfogat",         "waist",            "cm",
-  "Csípőkörfogat",       "hip",              "cm",
-  "Nyak",                "neck",             "cm",
-  "Comb",                "mid_thigh",        "cm",
-  "Alkar",               "forearm",          "cm",
-  "^ZS: has$",           "sf_abdomen",       "mm",
-  "ZS: mell",            "sf_chest",         "mm",
-  "ZS: comb",            "sf_thigh",         "mm",
-  "ZS: biceps",          "sf_biceps",        "mm",
-  "ZS: suprailiaca",     "sf_suprailiac",    "mm",
-  "ZS: vádli",           "sf_calf",          "mm",
-  "ZS: triceps",         "sf_triceps",       "mm",
-  "ZS: alsó",            "sf_lower_back",    "mm",
-  "ZS: subscapula",      "sf_subscapular",   "mm",
-  "ZS: midaxillary",     "sf_midaxillary",   "mm",
-  "^BMI$",               "bmi",              "kg/m2",
-  "US\\.Navy",           "bf_navy",          "fraction",
-  "Jackson",             "bf_jp3",           "fraction",
-  "Mod\\.JP3",           "bf_mod_jp3",       "fraction",
-  "^YMCA$",              "bf_ymca",          "fraction",
-  "^Zsír$",              "fat_mass",         "kg",
-  "^nemzsír$",           "ffm",              "kg",
-  "^FFMI \\(",           "ffmi",             "kg/m2",
-  "^FFMI_std",           "ffmi_std",         "kg/m2"
-)
+# Columns that are not measurements to interpolate: age is a function of the
+# date, and the delta_* columns are already differences against a baseline.
+DROP_COLS <- c("age_years", "delta_ffm", "delta_fat_mass")
 
-translate_metric <- function(hu_label) {
-  for (j in seq_len(nrow(METRIC_DICT))) {
-    if (grepl(METRIC_DICT$hu_pattern[j], hu_label)) {
-      return(METRIC_DICT$en_name[j])
-    }
-  }
-  hu_label  # fallback: keep original
-}
+MIN_OBS <- 3            # metrics with fewer observations are dropped
 
-# ---- Read transposed spreadsheet ----
+# ---- Read the tidy spreadsheet ----
 
 raw <- read_excel(
-  here::here("inst", "extdata", "anthropometrics.xlsx"),
-  col_names = FALSE
+  here::here("inst", "extdata", "anthropometrics_tidy.xlsx"),
+  sheet = PERSON,
+  skip  = META_ROWS
 )
 
-labels <- as.character(raw[[1]])
+# A few source cells hold stray text (e.g. "."), which makes readxl type the
+# whole column as character; coerce everything but the date back to numeric.
+dat_long <- raw %>%
+  mutate(date = as.Date(date)) %>%
+  select(-any_of(DROP_COLS)) %>%
+  mutate(across(-date, ~ suppressWarnings(as.numeric(.x)))) %>%
+  pivot_longer(-date, names_to = "metric_en", values_to = "value") %>%
+  filter(!is.na(value)) %>%
+  group_by(metric_en) %>%
+  filter(n() >= MIN_OBS) %>%
+  ungroup()
 
-# ---- Extract dates from the DÁTUM row ----
+dates <- sort(unique(dat_long$date))
 
-date_row <- which(grepl("DÁTUM", labels))
-n_cols   <- ncol(raw)
-
-dates_raw  <- suppressWarnings(as.numeric(unlist(raw[date_row, 2:n_cols])))
-valid_cols <- which(!is.na(dates_raw))          # indices within 2:n_cols
-dates      <- as.Date(dates_raw[valid_cols], origin = "1899-12-30")
-
-# actual column positions in `raw` (col 1 = labels, so offset by 1)
-data_cols <- valid_cols + 1
-
-# ---- Extract every metric row that has >= 3 observations ----
-
-# Rows to skip even if they have numbers
-skip_re <- paste0(
-  "Életkor|^-+$|^delta|legszűk|1cm-rel|",
-  "fenék|Ádámcsutka|^NÉV|Születési|^Nem:|Magasság|linear-software"
-)
-
-dat_long <- tibble()
-
-for (i in (date_row + 1):nrow(raw)) {
-  lbl <- trimws(labels[i])
-  if (is.na(lbl) || lbl == "") next
-  if (grepl(skip_re, lbl, ignore.case = TRUE)) next
-
-  vals <- suppressWarnings(as.numeric(unlist(raw[i, data_cols])))
-  n_valid <- sum(!is.na(vals))
-  if (n_valid < 3) next
-
-  dat_long <- bind_rows(dat_long, tibble(
-    date   = dates,
-    metric = lbl,
-    value  = vals
-  ))
-}
-
-# Apply English translation
-dat_long <- dat_long %>%
-  mutate(metric_en = sapply(metric, translate_metric, USE.NAMES = FALSE))
-
-message(length(unique(dat_long$metric_en)), " metrics extracted.")
+message(length(unique(dat_long$metric_en)), " metrics extracted over ",
+        length(dates), " observation dates.")
 
 # ---- Daily interpolation per metric ----
 #
@@ -254,7 +197,7 @@ fig_anthro <- dat_interp %>%
   theme(strip.text = element_text(size = 7)) +
   geom_line(color = "steelblue", linewidth = 0.5) +
   geom_point(
-    data = dat_obs %>% filter(metric_en %in% PLOT_METRICS),
+    data = dat_long %>% filter(metric_en %in% PLOT_METRICS),
     aes(x = date, y = value),
     color = "salmon4", size = 1, alpha = 0.6
   ) +
